@@ -1,4 +1,5 @@
 use std::{
+    iter::Sum,
     marker::PhantomData,
     mem,
     ops::{
@@ -152,12 +153,21 @@ pub trait Frame:
     + MulAssign<Self::Float>
     + Sub<Output = Self>
     + SubAssign<Self>
+    + Sum
     + Zero
 {
     type Float: Float;
 
     fn as_slice(&self) -> &[Self::Float];
     fn as_mut_slice(&mut self) -> &mut [Self::Float];
+
+    fn splat(val: Self::Float) -> Self {
+        let mut frm = Self::zero();
+        for x in frm.as_mut_slice() {
+            *x = val;
+        }
+        frm
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -303,6 +313,15 @@ where
     }
 }
 
+impl<T, const N: usize> Sum for ArrayFrame<T, N>
+where
+    T: Float,
+{
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::zero(), |acc, frame| acc + frame)
+    }
+}
+
 impl<T, const N: usize> Frame for ArrayFrame<T, N>
 where
     T: Float,
@@ -336,27 +355,19 @@ pub trait Node {
         &mut self,
         frm: Self::Frame,
     ) -> Self::Frame;
+}
 
-    fn chain<K>(
-        self,
-        other: K,
-    ) -> Chain<Self, K>
-    where
-        Self: Sized,
-        K: Node<Frame = Self::Frame>,
-    {
-        Chain(self, other)
-    }
+impl<T> Node for &mut T
+where
+    T: Node,
+{
+    type Frame = T::Frame;
 
-    fn mix<K>(
-        self,
-        other: K,
-    ) -> Mix<Self, K>
-    where
-        Self: Sized,
-        K: Node<Frame = Self::Frame>,
-    {
-        Mix(self, other)
+    fn tick(
+        &mut self,
+        frm: Self::Frame,
+    ) -> Self::Frame {
+        (*self).tick(frm)
     }
 }
 
@@ -440,9 +451,9 @@ impl<T: Frame> Node for OnePole<T> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Chain<T, K>(T, K);
+pub struct StackChain<T, K>(T, K);
 
-impl<T, K> Node for Chain<T, K>
+impl<T, K> Node for StackChain<T, K>
 where
     T: Node,
     K: Node<Frame = T::Frame>,
@@ -467,9 +478,9 @@ pub struct Delay<'a, T>
 where
     T: Frame,
 {
-    buffer: &'a mut [T],
-    index:  usize,
-    fbk:    T::Float,
+    pub feedback: T::Float,
+    buffer:       &'a mut [T],
+    index:        usize,
 }
 
 impl<'a, T> Delay<'a, T>
@@ -480,15 +491,8 @@ where
         Self {
             buffer,
             index: 0,
-            fbk: zero(),
+            feedback: zero(),
         }
-    }
-
-    pub fn feedback(
-        &mut self,
-        value: T::Float,
-    ) {
-        self.fbk = value;
     }
 }
 
@@ -503,7 +507,7 @@ where
         frm: Self::Frame,
     ) -> Self::Frame {
         let out = self.buffer[self.index];
-        self.buffer[self.index] = frm + out * self.fbk;
+        self.buffer[self.index] = frm + out * self.feedback;
 
         self.index += 1;
         if self.index == self.buffer.len() {
@@ -515,9 +519,9 @@ where
 }
 
 #[derive(Debug)]
-pub struct Mix<T, K>(T, K);
+pub struct StackMix<T, K>(T, K);
 
-impl<T, K> Node for Mix<T, K>
+impl<T, K> Node for StackMix<T, K>
 where
     T: Node,
     K: Node<Frame = T::Frame>,
@@ -530,4 +534,195 @@ where
     ) -> Self::Frame {
         self.0.tick(frm) + self.1.tick(frm)
     }
+}
+
+pub struct Chain<'a, T> {
+    nodes: Vec<Box<dyn Node<Frame = T> + 'a>>,
+}
+
+impl<'a, T> Default for Chain<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, T> Chain<'a, T> {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            nodes: Vec::new()
+        }
+    }
+
+    /// Allocates memory on the heap
+    pub fn push(
+        &mut self,
+        node: impl Node<Frame = T> + 'a,
+    ) {
+        self.nodes.push(Box::new(node));
+    }
+
+    pub fn nodes(&self) -> &[Box<dyn Node<Frame = T> + 'a>] {
+        &self.nodes
+    }
+
+    pub fn nodes_mut(&mut self) -> &mut [Box<dyn Node<Frame = T> + 'a>] {
+        &mut self.nodes
+    }
+}
+
+impl<'a, T> Node for Chain<'a, T>
+where
+    T: Frame,
+{
+    type Frame = T;
+
+    fn tick(
+        &mut self,
+        frm: Self::Frame,
+    ) -> Self::Frame {
+        self.nodes.iter_mut().fold(frm, |acc, node| node.tick(acc))
+    }
+}
+
+pub struct Mix<'a, T> {
+    nodes: Vec<Box<dyn Node<Frame = T> + 'a>>,
+}
+
+impl<'a, T> Default for Mix<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, T> Mix<'a, T> {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            nodes: Vec::new()
+        }
+    }
+
+    /// Allocates memory on the heap
+    pub fn push(
+        &mut self,
+        node: impl Node<Frame = T> + 'a,
+    ) {
+        self.nodes.push(Box::new(node));
+    }
+
+    pub fn nodes(&self) -> &[Box<dyn Node<Frame = T> + 'a>] {
+        &self.nodes
+    }
+
+    pub fn nodes_num(&mut self) -> &mut [Box<dyn Node<Frame = T> + 'a>] {
+        &mut self.nodes
+    }
+}
+
+impl<'a, T> Node for Mix<'a, T>
+where
+    T: Frame,
+{
+    type Frame = T;
+
+    fn tick(
+        &mut self,
+        frm: Self::Frame,
+    ) -> Self::Frame {
+        self.nodes.iter_mut().map(|node| node.tick(frm)).sum()
+    }
+}
+
+pub struct HeapNode<'a, T>
+where
+    T: Frame,
+{
+    func: Box<dyn FnMut(T) -> T + 'a>,
+}
+
+impl<'a, T> HeapNode<'a, T>
+where
+    T: Frame,
+{
+    // Moves `func` to the heap
+    pub fn new<F>(func: F) -> Self
+    where
+        F: FnMut(T) -> T + 'a,
+    {
+        Self {
+            func: Box::new(func),
+        }
+    }
+}
+
+impl<'a, T> Node for HeapNode<'a, T>
+where
+    T: Frame,
+{
+    type Frame = T;
+
+    fn tick(
+        &mut self,
+        frm: Self::Frame,
+    ) -> Self::Frame {
+        (self.func)(frm)
+    }
+}
+
+#[test]
+fn check_dyn_chain_91() {
+    let mut buf = alloc_buffer(2);
+    let del1 = Delay::new(&mut buf);
+
+    let mut gain = 32.;
+
+    let mut chain = Chain::new();
+    chain.push(del1);
+
+    chain.push(HeapNode::new(|x| {
+        gain /= 2.;
+        x * gain
+    }));
+
+    let silence = St::zero();
+    let impulse = St::splat(1.);
+
+    assert_eq!(chain.tick(impulse), silence);
+    assert_eq!(chain.tick(impulse), silence);
+    assert_eq!(chain.tick(silence), impulse * 4.);
+    assert_eq!(chain.tick(silence), impulse * 2.);
+    assert_eq!(chain.tick(silence), silence);
+
+    drop(chain);
+    assert_eq!(gain, 1.);
+}
+
+#[test]
+fn check_dyn_mix_91() {
+    let mut buf = alloc_buffer(2);
+    let del1 = Delay::new(&mut buf);
+
+    let mut gain = 32.;
+    let mut mix = Mix::new();
+    mix.push(del1);
+
+    mix.push(HeapNode::new(|x| {
+        gain /= 2.;
+        x * gain
+    }));
+
+    let silence = St::zero();
+    let impulse = St::splat(1.);
+
+    assert_eq!(mix.tick(impulse), impulse * 16.);
+    assert_eq!(mix.tick(impulse), impulse * 8.);
+    assert_eq!(mix.tick(impulse), impulse * (4. + 1.));
+    assert_eq!(mix.tick(impulse), impulse * (2. + 1.));
+    assert_eq!(mix.tick(silence), impulse);
+    assert_eq!(mix.tick(silence), impulse);
+    assert_eq!(mix.tick(silence), silence);
+
+    drop(mix);
+    assert_eq!(gain, 0.25);
 }
