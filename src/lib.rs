@@ -789,6 +789,7 @@ where
 
 #[allow(missing_debug_implementations)]
 pub struct HeapNode<'a, T> {
+    #[allow(clippy::type_complexity)]
     func: Box<dyn FnMut(&mut [T]) + 'a>,
 }
 
@@ -830,6 +831,7 @@ where
 }
 
 pub struct Bus<'a, T> {
+    #[allow(clippy::type_complexity)]
     nodes: Vec<Box<dyn FnMut(&mut [T]) + 'a>>,
 }
 
@@ -893,22 +895,19 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct Sine<T>
-where
-    T: Frame,
-{
-    pub phase: T::Sample,
-    pub freq:  T::Sample,
+pub struct Sine<T> {
+    pub phase: Fp,
+    pub freq:  Fp,
+    _marker:   PhantomData<T>,
 }
 
-impl<T> Sine<T>
-where
-    T: Frame,
-{
-    pub fn new(freq: T::Sample) -> Self {
+impl<T> Sine<T> {
+    #[must_use]
+    pub fn new(freq: Fp) -> Self {
         Self {
-            phase: zero(),
+            phase: 0.,
             freq,
+            _marker: PhantomData,
         }
     }
 }
@@ -925,10 +924,223 @@ where
         frames: &mut [Self::Frame],
     ) {
         for frm in frames {
-            *frm = Self::Frame::splat((self.phase * tau()).sin());
+            *frm = Self::Frame::splat(
+                (T::Sample::from_float(self.phase) * tau()).sin(),
+            );
             self.phase += self.freq;
-            while self.phase >= one() {
-                self.phase -= one();
+            while self.phase >= 1. {
+                self.phase -= 1.;
+            }
+        }
+    }
+}
+
+/// Generic trait for non-interpolating values
+pub trait Noi<T>
+where
+    T: Float,
+{
+    #[must_use]
+    fn noi(
+        self,
+        other: Self,
+        t: T,
+    ) -> Self;
+}
+
+impl<U, T> Noi<T> for U
+where
+    T: Float,
+{
+    fn noi(
+        self,
+        other: Self,
+        t: T,
+    ) -> Self {
+        if t < T::from_float(0.5) {
+            self
+        } else {
+            other
+        }
+    }
+}
+
+/// Generic linear interpolation trait.
+pub trait Lin<T>
+where
+    T: Float,
+{
+    #[must_use]
+    fn lin(
+        self,
+        other: Self,
+        t: T,
+    ) -> Self;
+}
+
+impl<U, T> Lin<T> for U
+where
+    U: Add<Output = U> + Mul<T, Output = U>,
+    T: Float,
+{
+    #[inline]
+    fn lin(
+        self,
+        other: U,
+        t: T,
+    ) -> U {
+        self * (T::one() - t) + other * t
+    }
+}
+
+/// Generic cubic interpolation trait.
+pub trait Cub<T>
+where
+    T: Float,
+{
+    #[must_use]
+    fn cub(
+        self,
+        other: Self,
+        prev: Self,
+        next: Self,
+        t: T,
+    ) -> Self;
+}
+
+impl<U, T> Cub<T> for U
+where
+    U: Add<Output = U> + Mul<T, Output = U> + Copy,
+    T: Float,
+{
+    #[inline]
+    fn cub(
+        self,
+        other: Self,
+        prev: Self,
+        next: Self,
+        t: T,
+    ) -> Self {
+        (((prev * T::from_float(-1.)
+            + self * T::from_float(3.)
+            + other * T::from_float(-3.)
+            + next)
+            * t
+            + prev * T::from_float(2.)
+            + self * T::from_float(-5.)
+            + other * T::from_float(4.)
+            + next * T::from_float(-1.))
+            * t
+            + prev * T::from_float(-1.)
+            + other * T::from_float(1.))
+            * (t * T::from_float(0.5))
+            + self
+    }
+}
+
+/// No interpolation. If `t < 0.5`, chose `a`; otherwise choose `b`.
+pub fn noi<U, T>(
+    a: U,
+    b: U,
+    t: T,
+) -> U
+where
+    U: Noi<T>,
+    T: Float,
+{
+    a.noi(b, t)
+}
+
+/// Linear interpolation of floating-point numbers.
+#[inline]
+pub fn lin<U, T>(
+    a: U,
+    b: U,
+    t: T,
+) -> U
+where
+    U: Lin<T>,
+    T: Float,
+{
+    a.lin(b, t)
+}
+
+/// Catmull-Rom cubic spline interpolation.
+///
+/// A form of cubic Hermite spline. Interpolates between
+/// `a` (returns `a` when `t` = 0) and
+/// `b` (returns `b` when `t` = 1) while using the previous (`a_prev`)
+/// and next (`b_next`) points to define slopes at the endpoints.
+/// The maximum overshoot is 1/8th of the range of the arguments.
+///
+/// # Examples
+///
+/// ```rust
+/// # use sn_dsp::cub;
+/// let (a_prev, a, b, b_next) = (0., 1., 2., 3.);
+///
+/// assert_eq!(cub(a_prev, a, b, b_next, 0.00), 1.00);
+/// assert_eq!(cub(a_prev, a, b, b_next, 0.25), 1.25);
+/// assert_eq!(cub(a_prev, a, b, b_next, 1.00), 2.00);
+/// ```
+pub fn cub<U, T>(
+    a_prev: U,
+    a: U,
+    b: U,
+    b_next: U,
+    t: T,
+) -> U
+where
+    U: Cub<T>,
+    T: Float,
+{
+    a.cub(b, a_prev, b_next, t)
+}
+
+/// Wavetable oscillator with linear interpolation
+#[derive(Debug)]
+pub struct Wt<'a, T> {
+    pub phase: Fp,
+    pub freq:  Fp,
+    wt:        &'a [T],
+}
+
+impl<'a, T> Wt<'a, T> {
+    pub fn new(
+        wt: &'a [T],
+        freq: Fp,
+    ) -> Self {
+        Self {
+            phase: 0.,
+            freq,
+            wt,
+        }
+    }
+}
+impl<'a, T> Node for Wt<'a, T>
+where
+    T: Frame,
+{
+    type Frame = T;
+
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    fn proc(
+        &mut self,
+        frames: &mut [Self::Frame],
+    ) {
+        for frm in frames {
+            let len = self.wt.len();
+            let idx_fp = len as Fp * self.phase;
+            let idx = idx_fp.floor();
+            let t = idx_fp - idx;
+            let idx = if idx as usize >= len { 0 } else { idx as usize };
+            let idx_next = if idx == len - 1 { 0 } else { idx + 1 };
+
+            *frm = lin(self.wt[idx], self.wt[idx_next], t.to_float());
+            self.phase += self.freq;
+            while self.phase >= 1. {
+                self.phase -= 1.;
             }
         }
     }
