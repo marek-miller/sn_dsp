@@ -634,31 +634,33 @@ where
     }
 }
 
-pub struct HeapNode<'a, T>
+pub struct StackNode<T, F>
 where
     T: Frame,
+    F: FnMut(T) -> T,
 {
-    func: Box<dyn FnMut(T) -> T + 'a>,
+    func:    F,
+    _marker: PhantomData<T>,
 }
 
-impl<'a, T> HeapNode<'a, T>
+impl<T, F> StackNode<T, F>
 where
     T: Frame,
+    F: FnMut(T) -> T,
 {
     // Moves `func` to the heap
-    pub fn new<F>(func: F) -> Self
-    where
-        F: FnMut(T) -> T + 'a,
-    {
+    pub fn new(func: F) -> Self {
         Self {
-            func: Box::new(func),
+            func,
+            _marker: PhantomData,
         }
     }
 }
 
-impl<'a, T> Node for HeapNode<'a, T>
+impl<T, F> Node for StackNode<T, F>
 where
     T: Frame,
+    F: FnMut(T) -> T,
 {
     type Frame = T;
 
@@ -680,7 +682,7 @@ fn check_dyn_chain_91() {
     let mut chain = Chain::new();
     chain.push(del1);
 
-    chain.push(HeapNode::new(|x| {
+    chain.push(StackNode::new(|x| {
         gain /= 2.;
         x * gain
     }));
@@ -707,7 +709,7 @@ fn check_dyn_mix_91() {
     let mut mix = Mix::new();
     mix.push(del1);
 
-    mix.push(HeapNode::new(|x| {
+    mix.push(StackNode::new(|x| {
         gain /= 2.;
         x * gain
     }));
