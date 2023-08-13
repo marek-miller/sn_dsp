@@ -1,4 +1,10 @@
+//! DSP for sn_
+
+// #![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
+
 use std::{
+    fmt::Debug,
     iter::Sum,
     marker::PhantomData,
     mem,
@@ -361,7 +367,6 @@ pub trait Frame:
     + Copy
     + Clone
     + PartialEq
-    + PartialOrd
     + Add<Output = Self>
     + AddAssign<Self>
     + Neg<Output = Self>
@@ -386,7 +391,7 @@ pub trait Frame:
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Arf<T, const N: usize>([T; N])
 where
     T: Float;
@@ -406,15 +411,6 @@ where
 {
     fn zero() -> Self {
         Self([T::zero(); N])
-    }
-}
-
-impl<T, const N: usize> One for Arf<T, N>
-where
-    T: Float,
-{
-    fn one() -> Self {
-        Self([T::one(); N])
     }
 }
 
@@ -753,6 +749,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct StackNode<T, F>
 where
     T: Frame,
@@ -790,11 +787,20 @@ where
     }
 }
 
-pub struct HeapNode<'a, T>
-where
-    T: Frame,
-{
+#[allow(missing_debug_implementations)]
+pub struct HeapNode<'a, T> {
     func: Box<dyn FnMut(&mut [T]) + 'a>,
+}
+
+impl<'a, T> Debug for HeapNode<'a, T> {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        f.debug_struct("HeapNode")
+            .field("func", &format_args!("Box<dyn FnMut>"))
+            .finish()
+    }
 }
 
 impl<'a, T> HeapNode<'a, T>
@@ -825,6 +831,17 @@ where
 
 pub struct Bus<'a, T> {
     nodes: Vec<Box<dyn FnMut(&mut [T]) + 'a>>,
+}
+
+impl<'a, T> Debug for Bus<'a, T> {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        f.debug_struct("Bus")
+            .field("nodes", &format_args!("[Box<dyn FnMut>]"))
+            .finish()
+    }
 }
 
 impl<'a, T> Default for Bus<'a, T> {
@@ -934,7 +951,7 @@ fn check_dyn_chain_91() {
         }
     });
 
-    let silence = St::zero();
+    let silence = zero();
     let impulse = St::splat(1.);
 
     let mut frames = [impulse, impulse, silence, silence, silence];
