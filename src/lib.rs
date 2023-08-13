@@ -450,24 +450,6 @@ impl<T: Frame> Node for OnePole<T> {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct StackChain<T, K>(T, K);
-
-impl<T, K> Node for StackChain<T, K>
-where
-    T: Node,
-    K: Node<Frame = T::Frame>,
-{
-    type Frame = T::Frame;
-
-    fn tick(
-        &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        self.1.tick(self.0.tick(frm))
-    }
-}
-
 #[must_use]
 pub fn alloc_buffer<T: Default>(size: usize) -> Box<[T]> {
     (0..size).map(|_| T::default()).collect()
@@ -518,122 +500,6 @@ where
     }
 }
 
-#[derive(Debug)]
-pub struct StackMix<T, K>(T, K);
-
-impl<T, K> Node for StackMix<T, K>
-where
-    T: Node,
-    K: Node<Frame = T::Frame>,
-{
-    type Frame = T::Frame;
-
-    fn tick(
-        &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        self.0.tick(frm) + self.1.tick(frm)
-    }
-}
-
-pub struct Chain<'a, T> {
-    nodes: Vec<Box<dyn Node<Frame = T> + 'a>>,
-}
-
-impl<'a, T> Default for Chain<'a, T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a, T> Chain<'a, T> {
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            nodes: Vec::new()
-        }
-    }
-
-    /// Allocates memory on the heap
-    pub fn push(
-        &mut self,
-        node: impl Node<Frame = T> + 'a,
-    ) {
-        self.nodes.push(Box::new(node));
-    }
-
-    pub fn nodes(&self) -> &[Box<dyn Node<Frame = T> + 'a>] {
-        &self.nodes
-    }
-
-    pub fn nodes_mut(&mut self) -> &mut [Box<dyn Node<Frame = T> + 'a>] {
-        &mut self.nodes
-    }
-}
-
-impl<'a, T> Node for Chain<'a, T>
-where
-    T: Frame,
-{
-    type Frame = T;
-
-    fn tick(
-        &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        self.nodes.iter_mut().fold(frm, |acc, node| node.tick(acc))
-    }
-}
-
-pub struct Mix<'a, T> {
-    nodes: Vec<Box<dyn Node<Frame = T> + 'a>>,
-}
-
-impl<'a, T> Default for Mix<'a, T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a, T> Mix<'a, T> {
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            nodes: Vec::new()
-        }
-    }
-
-    /// Allocates memory on the heap
-    pub fn push(
-        &mut self,
-        node: impl Node<Frame = T> + 'a,
-    ) {
-        self.nodes.push(Box::new(node));
-    }
-
-    pub fn nodes(&self) -> &[Box<dyn Node<Frame = T> + 'a>] {
-        &self.nodes
-    }
-
-    pub fn nodes_num(&mut self) -> &mut [Box<dyn Node<Frame = T> + 'a>] {
-        &mut self.nodes
-    }
-}
-
-impl<'a, T> Node for Mix<'a, T>
-where
-    T: Frame,
-{
-    type Frame = T;
-
-    fn tick(
-        &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        self.nodes.iter_mut().map(|node| node.tick(frm)).sum()
-    }
-}
-
 pub struct StackNode<T, F>
 where
     T: Frame,
@@ -672,6 +538,139 @@ where
     }
 }
 
+pub struct HeapNode<'a, T>
+where
+    T: Frame,
+{
+    func: Box<dyn FnMut(T) -> T + 'a>,
+}
+
+impl<'a, T> HeapNode<'a, T>
+where
+    T: Frame,
+{
+    // Moves `func` to the heap
+    pub fn new(func: impl FnMut(T) -> T + 'a) -> Self {
+        Self {
+            func: Box::new(func),
+        }
+    }
+}
+
+impl<'a, T> Node for HeapNode<'a, T>
+where
+    T: Frame,
+{
+    type Frame = T;
+
+    fn tick(
+        &mut self,
+        frm: Self::Frame,
+    ) -> Self::Frame {
+        (self.func)(frm)
+    }
+}
+
+pub struct Bus<'a, T> {
+    nodes: Vec<Box<dyn FnMut(T) -> T + 'a>>,
+}
+
+impl<'a, T> Default for Bus<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, T> Bus<'a, T> {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            nodes: Vec::new()
+        }
+    }
+
+    /// Allocates memory on the heap
+    pub fn push(
+        &mut self,
+        func: impl FnMut(T) -> T + 'a,
+    ) {
+        self.nodes.push(Box::new(func));
+    }
+
+    /// Allocates memory on the heap
+    pub fn add_node(
+        &mut self,
+        node: impl Node<Frame = T> + 'a,
+    ) {
+        let mut node = node;
+        self.push(move |x| node.tick(x));
+    }
+}
+
+impl<'a, T> Node for Bus<'a, T>
+where
+    T: Frame,
+{
+    type Frame = T;
+
+    fn tick(
+        &mut self,
+        frm: Self::Frame,
+    ) -> Self::Frame {
+        self.nodes.iter_mut().fold(frm, |acc, func| func(acc))
+    }
+}
+
+pub struct Mix<'a, T> {
+    nodes: Vec<Box<dyn FnMut(T) -> T + 'a>>,
+}
+
+impl<'a, T> Default for Mix<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, T> Mix<'a, T> {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            nodes: Vec::new()
+        }
+    }
+
+    /// Allocates memory on the heap
+    pub fn push(
+        &mut self,
+        func: impl FnMut(T) -> T + 'a,
+    ) {
+        self.nodes.push(Box::new(func));
+    }
+
+    /// Allocates memory on the heap
+    pub fn add_node(
+        &mut self,
+        node: impl Node<Frame = T> + 'a,
+    ) {
+        let mut node = node;
+        self.push(move |x| node.tick(x));
+    }
+}
+
+impl<'a, T> Node for Mix<'a, T>
+where
+    T: Frame,
+{
+    type Frame = T;
+
+    fn tick(
+        &mut self,
+        frm: Self::Frame,
+    ) -> Self::Frame {
+        self.nodes.iter_mut().map(|func| func(frm)).sum()
+    }
+}
+
 #[test]
 fn check_dyn_chain_91() {
     let mut buf = alloc_buffer(2);
@@ -679,13 +678,13 @@ fn check_dyn_chain_91() {
 
     let mut gain = 32.;
 
-    let mut chain = Chain::new();
-    chain.push(del1);
+    let mut chain = Bus::new();
+    chain.add_node(del1);
 
-    chain.push(StackNode::new(|x| {
+    chain.push(|x| {
         gain /= 2.;
         x * gain
-    }));
+    });
 
     let silence = St::zero();
     let impulse = St::splat(1.);
@@ -707,12 +706,12 @@ fn check_dyn_mix_91() {
 
     let mut gain = 32.;
     let mut mix = Mix::new();
-    mix.push(del1);
+    mix.add_node(del1);
 
-    mix.push(StackNode::new(|x| {
+    mix.push(|x| {
         gain /= 2.;
         x * gain
-    }));
+    });
 
     let silence = St::zero();
     let impulse = St::splat(1.);
