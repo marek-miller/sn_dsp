@@ -88,6 +88,12 @@ pub trait Float:
     }
 }
 
+#[inline]
+#[must_use]
+pub fn two<T: One + Float>() -> T {
+    one::<T>() + one::<T>()
+}
+
 impl Float for f32 {
     const EPSILON: Self = std::f32::EPSILON;
 
@@ -155,6 +161,8 @@ pub trait Real: Float {
     const TAU: Self;
 
     #[must_use]
+    fn recip(self) -> Self;
+    #[must_use]
     fn floor(self) -> Self;
     #[must_use]
     fn ceil(self) -> Self;
@@ -220,6 +228,11 @@ pub const fn sqrt2<T: Real>() -> T {
     T::SQRT_2
 }
 
+#[must_use]
+pub fn one_half<T: One + Real>() -> T {
+    two::<T>().recip()
+}
+
 macro_rules! impl_real {
     ($($Typ:ident)*) => {
         $(
@@ -230,6 +243,10 @@ macro_rules! impl_real {
                 const PI: Self = std::$Typ::consts::PI;
                 const SQRT_2: Self = std::$Typ::consts::SQRT_2;
                 const TAU: Self = std::$Typ::consts::TAU;
+
+                fn recip(self) -> Self {
+                    self.recip()
+                }
 
                 fn floor(self) -> Self {
                     self.floor()
@@ -370,11 +387,11 @@ pub trait Frame:
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct ArrayFrame<T, const N: usize>([T; N])
+pub struct Arf<T, const N: usize>([T; N])
 where
     T: Float;
 
-impl<T, const N: usize> Default for ArrayFrame<T, N>
+impl<T, const N: usize> Default for Arf<T, N>
 where
     T: Float,
 {
@@ -383,7 +400,7 @@ where
     }
 }
 
-impl<T, const N: usize> Zero for ArrayFrame<T, N>
+impl<T, const N: usize> Zero for Arf<T, N>
 where
     T: Float,
 {
@@ -392,7 +409,7 @@ where
     }
 }
 
-impl<T, const N: usize> One for ArrayFrame<T, N>
+impl<T, const N: usize> One for Arf<T, N>
 where
     T: Float,
 {
@@ -401,7 +418,7 @@ where
     }
 }
 
-impl<T, const N: usize> Add for ArrayFrame<T, N>
+impl<T, const N: usize> Add for Arf<T, N>
 where
     T: Float,
 {
@@ -419,7 +436,7 @@ where
     }
 }
 
-impl<T, const N: usize> AddAssign for ArrayFrame<T, N>
+impl<T, const N: usize> AddAssign for Arf<T, N>
 where
     T: Float,
 {
@@ -433,7 +450,7 @@ where
     }
 }
 
-impl<T, const N: usize> Sub for ArrayFrame<T, N>
+impl<T, const N: usize> Sub for Arf<T, N>
 where
     T: Float,
 {
@@ -451,7 +468,7 @@ where
     }
 }
 
-impl<T, const N: usize> SubAssign for ArrayFrame<T, N>
+impl<T, const N: usize> SubAssign for Arf<T, N>
 where
     T: Float,
 {
@@ -465,7 +482,7 @@ where
     }
 }
 
-impl<T, const N: usize> Neg for ArrayFrame<T, N>
+impl<T, const N: usize> Neg for Arf<T, N>
 where
     T: Float,
 {
@@ -480,7 +497,7 @@ where
     }
 }
 
-impl<T, const N: usize> Mul<T> for ArrayFrame<T, N>
+impl<T, const N: usize> Mul<T> for Arf<T, N>
 where
     T: Float,
 {
@@ -498,7 +515,7 @@ where
     }
 }
 
-impl<T, const N: usize> MulAssign<T> for ArrayFrame<T, N>
+impl<T, const N: usize> MulAssign<T> for Arf<T, N>
 where
     T: Float,
 {
@@ -512,7 +529,7 @@ where
     }
 }
 
-impl<T, const N: usize> Sum for ArrayFrame<T, N>
+impl<T, const N: usize> Sum for Arf<T, N>
 where
     T: Float,
 {
@@ -521,7 +538,7 @@ where
     }
 }
 
-impl<T, const N: usize> Frame for ArrayFrame<T, N>
+impl<T, const N: usize> Frame for Arf<T, N>
 where
     T: Float,
 {
@@ -541,9 +558,9 @@ pub type Fp = f64;
 #[cfg(not(feature = "f64"))]
 pub type Fp = f32;
 
-pub type Mo = ArrayFrame<Fp, 1>;
-pub type St = ArrayFrame<Fp, 2>;
-pub type Qd = ArrayFrame<Fp, 4>;
+pub type Mo = Arf<Fp, 1>;
+pub type St = Arf<Fp, 2>;
+pub type Qd = Arf<Fp, 4>;
 
 pub trait Node {
     type Frame: Frame;
