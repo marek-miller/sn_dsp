@@ -118,7 +118,7 @@ where
     U: Noi<T>,
     T: Float,
 {
-    a.noi(b, t)
+    Noi::noi(a, b, t)
 }
 
 /// Linear interpolation of floating-point numbers.
@@ -132,7 +132,7 @@ where
     U: Lin<T>,
     T: Float,
 {
-    a.lin(b, t)
+    Lin::lin(a, b, t)
 }
 
 /// Catmull-Rom cubic spline interpolation.
@@ -146,7 +146,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// # use sn_dsp::interp::cub;
+/// # use sn_dsp::terp::cub;
 /// let (a_prev, a, b, b_next) = (0., 1., 2., 3.);
 ///
 /// assert_eq!(cub(a_prev, a, b, b_next, 0.00), 1.00);
@@ -164,5 +164,5 @@ where
     U: Cub<T>,
     T: Float,
 {
-    a.cub(b, a_prev, b_next, t)
+    Cub::cub(a, b, a_prev, b_next, t)
 }

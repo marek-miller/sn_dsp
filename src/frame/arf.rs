@@ -200,11 +200,13 @@ impl<T> Arf<T, 2>
 where
     T: Float,
 {
+    #[must_use]
     pub fn flip(self) -> Self {
         [self.0[1], self.0[0]].into()
     }
 
     /// `pos` is assumed to be within `[-1., 1.]`
+    #[must_use]
     pub fn pan(
         self,
         pos: Fp,

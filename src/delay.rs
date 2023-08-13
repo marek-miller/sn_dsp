@@ -4,7 +4,6 @@ use crate::{
     frame::Frame,
     node::Node,
     num::{
-        zero,
         Float,
         Fp,
     },
@@ -44,7 +43,7 @@ where
         Self {
             buffer,
             index: 0,
-            feedback: zero(),
+            feedback: 0.,
         }
     }
 }
