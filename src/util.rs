@@ -3,7 +3,11 @@ use std::marker::PhantomData;
 use crate::{
     frame::Frame,
     node::Node,
-    num::one,
+    num::{
+        one,
+        Float,
+        Fp,
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -11,7 +15,7 @@ pub struct Gain<T>
 where
     T: Frame,
 {
-    pub gain: T::Sample,
+    pub gain: Fp,
     _marker:  PhantomData<T>,
 }
 
@@ -48,7 +52,7 @@ where
         frames: &mut [Self::Frame],
     ) {
         for frm in frames {
-            *frm *= self.gain;
+            *frm *= self.gain.to_float();
         }
     }
 }

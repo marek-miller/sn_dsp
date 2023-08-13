@@ -5,7 +5,6 @@ use std::{
 
 use crate::{
     frame::Frame,
-    interp::lin,
     node::Node,
     num::{
         tau,
@@ -13,6 +12,7 @@ use crate::{
         Fp,
         Real,
     },
+    terp::lin,
 };
 
 #[derive(Debug, Clone)]

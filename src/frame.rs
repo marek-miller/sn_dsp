@@ -42,13 +42,17 @@ pub trait Frame:
     fn as_slice(&self) -> &[Self::Sample];
     fn as_mut_slice(&mut self) -> &mut [Self::Sample];
 
-    fn splat(val: Self::Sample) -> Self {
+    fn splat(value: Self::Sample) -> Self {
         let mut frm = Self::zero();
         for x in frm.as_mut_slice() {
-            *x = val;
+            *x = value;
         }
         frm
     }
+}
+
+pub fn splat<T: Frame>(value: T::Sample) -> T {
+    T::splat(value)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
