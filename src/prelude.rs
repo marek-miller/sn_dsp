@@ -1,3 +1,9 @@
+//! Import common traits.
+//!
+//! # Tutorial
+//!
+//! *WIP* 🚧
+
 pub use traits::*;
 pub use types::*;
 

@@ -1,4 +1,10 @@
-//! DSP for sn_
+//! DSP for sn_ 🪐
+//!
+//! Dynamic DSP system of nodes at variable control rate.
+//!
+//! See module: [prelude] for a tutorial.
+//!
+//! [predule]: crate::prelude
 
 // #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]

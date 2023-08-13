@@ -3,7 +3,11 @@ use std::mem;
 use crate::{
     frame::Frame,
     node::Node,
-    num::zero,
+    num::{
+        zero,
+        Float,
+        Fp,
+    },
 };
 
 #[derive(Debug, Clone, Default)]
@@ -27,7 +31,7 @@ pub struct Delay<'a, T>
 where
     T: Frame,
 {
-    pub feedback: T::Sample,
+    pub feedback: Fp,
     buffer:       &'a mut [T],
     index:        usize,
 }
@@ -57,7 +61,7 @@ where
     ) {
         for frm in frames {
             let y0 = self.buffer[self.index];
-            self.buffer[self.index] = *frm + y0 * self.feedback;
+            self.buffer[self.index] = *frm + y0 * self.feedback.to_float();
             self.index += 1;
             if self.index == self.buffer.len() {
                 self.index = 0;
