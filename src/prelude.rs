@@ -14,6 +14,7 @@ pub use crate::{
         Arf,
     },
     node::{
+        heapnode,
         Bus,
         HeapNode,
         StackNode,

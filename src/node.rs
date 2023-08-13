@@ -1,4 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
+#![allow(clippy::type_complexity)]
 
 use std::{
     fmt::Debug,
@@ -6,6 +7,7 @@ use std::{
 };
 
 use crate::frame::Frame;
+
 pub trait Node {
     type Frame: Frame;
 
@@ -55,8 +57,7 @@ where
 
 #[allow(missing_debug_implementations)]
 pub struct HeapNode<'a, T> {
-    #[allow(clippy::type_complexity)]
-    func: Box<dyn FnMut(&mut [T]) + 'a>,
+    f: Box<dyn FnMut(&mut [T]) + 'a>,
 }
 
 impl<'a, T> Debug for HeapNode<'a, T> {
@@ -74,12 +75,21 @@ impl<'a, T> HeapNode<'a, T>
 where
     T: Frame,
 {
-    /// Moves `func` to the heap
-    pub fn new(func: impl FnMut(&mut [T]) + 'a) -> Self {
+    /// Move closure `f` to the heap
+    pub fn new(f: impl FnMut(&mut [T]) + 'a) -> Self {
         Self {
-            func: Box::new(func),
+            f: Box::new(f)
         }
     }
+
+    pub fn as_box(self) -> Box<dyn FnMut(&mut [T]) + 'a> {
+        self.f
+    }
+}
+
+/// Move closure `f` to the heap
+pub fn heapnode<'a, T: Frame>(f: impl FnMut(&mut [T]) + 'a) -> HeapNode<'a, T> {
+    HeapNode::new(f)
 }
 
 impl<'a, T> Node for HeapNode<'a, T>
@@ -92,12 +102,11 @@ where
         &mut self,
         frames: &mut [Self::Frame],
     ) {
-        (self.func)(frames);
+        (self.f)(frames);
     }
 }
 
 pub struct Bus<'a, T> {
-    #[allow(clippy::type_complexity)]
     nodes: Vec<Box<dyn FnMut(&mut [T]) + 'a>>,
 }
 
@@ -126,21 +135,21 @@ impl<'a, T> Bus<'a, T> {
         }
     }
 
-    /// Allocates memory on the heap
+    /// Move closure `f` to the heap
     pub fn push(
         &mut self,
-        func: impl FnMut(&mut [T]) + 'a,
+        f: impl FnMut(&mut [T]) + 'a,
     ) {
-        self.nodes.push(Box::new(func));
+        self.nodes.push(Box::new(f));
     }
 
-    /// Allocates memory on the heap
     pub fn add_node(
         &mut self,
-        node: impl Node<Frame = T> + 'a,
-    ) {
-        let mut node = node;
-        self.push(move |x| node.proc(x));
+        node: HeapNode<'a, T>,
+    ) where
+        T: Frame,
+    {
+        self.nodes.push(node.as_box())
     }
 }
 
