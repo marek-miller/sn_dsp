@@ -73,6 +73,8 @@ pub trait Float:
     + Zero
     + One
 {
+    const EPSILON: Self;
+
     fn from_f32(value: f32) -> Self;
     fn from_f64(value: f64) -> Self;
     fn from_float<T: Float>(value: T) -> Self {
@@ -87,6 +89,8 @@ pub trait Float:
 }
 
 impl Float for f32 {
+    const EPSILON: Self = std::f32::EPSILON;
+
     fn from_f32(value: f32) -> Self {
         value
     }
@@ -114,6 +118,8 @@ impl Float for f32 {
 }
 
 impl Float for f64 {
+    const EPSILON: Self = std::f64::EPSILON;
+
     fn from_f32(value: f32) -> Self {
         f64::from(value)
     }
@@ -140,6 +146,199 @@ impl Float for f64 {
     }
 }
 
+pub trait Real: Float {
+    const SQRT_2: Self;
+    const E: Self;
+    const LN_2: Self;
+    const LN_10: Self;
+    const PI: Self;
+    const TAU: Self;
+
+    #[must_use]
+    fn floor(self) -> Self;
+    #[must_use]
+    fn ceil(self) -> Self;
+    #[must_use]
+    fn abs(self) -> Self;
+    #[must_use]
+    fn signum(self) -> Self;
+    #[must_use]
+    fn sqrt(self) -> Self;
+    #[must_use]
+    fn powf(
+        self,
+        n: Self,
+    ) -> Self;
+    #[must_use]
+    fn exp(self) -> Self;
+    #[must_use]
+    fn exp2(self) -> Self;
+    #[must_use]
+    fn ln(self) -> Self;
+    #[must_use]
+    fn log(
+        self,
+        base: Self,
+    ) -> Self;
+    #[must_use]
+    fn log2(self) -> Self;
+    #[must_use]
+    fn log10(self) -> Self;
+    #[must_use]
+    fn sin(self) -> Self;
+    #[must_use]
+    fn cos(self) -> Self;
+    #[must_use]
+    fn tan(self) -> Self;
+    #[must_use]
+    fn asin(self) -> Self;
+    #[must_use]
+    fn acos(self) -> Self;
+    #[must_use]
+    fn atan(self) -> Self;
+    #[must_use]
+    fn sinh(self) -> Self;
+    #[must_use]
+    fn cosh(self) -> Self;
+    #[must_use]
+    fn tanh(self) -> Self;
+    #[must_use]
+    fn asinh(self) -> Self;
+    #[must_use]
+    fn acosh(self) -> Self;
+    #[must_use]
+    fn atanh(self) -> Self;
+}
+
+#[must_use]
+pub const fn tau<T: Real>() -> T {
+    T::TAU
+}
+
+#[must_use]
+pub const fn sqrt2<T: Real>() -> T {
+    T::SQRT_2
+}
+
+macro_rules! impl_real {
+    ($($Typ:ident)*) => {
+        $(
+            impl Real for $Typ {
+                const E: Self = std::$Typ::consts::E;
+                const LN_10: Self = std::$Typ::consts::LN_10;
+                const LN_2: Self = std::$Typ::consts::LN_2;
+                const PI: Self = std::$Typ::consts::PI;
+                const SQRT_2: Self = std::$Typ::consts::SQRT_2;
+                const TAU: Self = std::$Typ::consts::TAU;
+
+                fn floor(self) -> Self {
+                    self.floor()
+                }
+
+                fn ceil(self) -> Self {
+                    self.ceil()
+                }
+
+                fn abs(self) -> Self {
+                    self.abs()
+                }
+
+                fn signum(self) -> Self {
+                    self.signum()
+                }
+
+                fn sqrt(self) -> Self {
+                    self.sqrt()
+                }
+
+                fn powf(
+                    self,
+                    n: Self,
+                ) -> Self {
+                    self.powf(n)
+                }
+
+                fn exp(self) -> Self {
+                    self.exp()
+                }
+
+                fn exp2(self) -> Self {
+                    self.exp2()
+                }
+
+                fn ln(self) -> Self {
+                    self.ln()
+                }
+
+                fn log(
+                    self,
+                    base: Self,
+                ) -> Self {
+                    self.log(base)
+                }
+
+                fn log2(self) -> Self {
+                    self.log2()
+                }
+
+                fn log10(self) -> Self {
+                    self.log10()
+                }
+
+                fn sin(self) -> Self {
+                    self.sin()
+                }
+
+                fn cos(self) -> Self {
+                    self.cos()
+                }
+
+                fn tan(self) -> Self {
+                    self.tan()
+                }
+
+                fn asin(self) -> Self {
+                    self.asin()
+                }
+
+                fn acos(self) -> Self {
+                    self.acos()
+                }
+
+                fn atan(self) -> Self {
+                    self.atan()
+                }
+
+                fn sinh(self) -> Self {
+                    self.sinh()
+                }
+
+                fn cosh(self) -> Self {
+                    self.cosh()
+                }
+
+                fn tanh(self) -> Self {
+                    self.tanh()
+                }
+
+                fn asinh(self) -> Self {
+                    self.asinh()
+                }
+
+                fn acosh(self) -> Self {
+                    self.acosh()
+                }
+
+                fn atanh(self) -> Self {
+                    self.atanh()
+                }
+            }
+        )*
+    };
+}
+
+impl_real!(f32 f64);
+
 pub trait Frame:
     Default
     + Copy
@@ -149,19 +348,19 @@ pub trait Frame:
     + Add<Output = Self>
     + AddAssign<Self>
     + Neg<Output = Self>
-    + Mul<Self::Float, Output = Self>
-    + MulAssign<Self::Float>
+    + Mul<Self::Sample, Output = Self>
+    + MulAssign<Self::Sample>
     + Sub<Output = Self>
     + SubAssign<Self>
     + Sum
     + Zero
 {
-    type Float: Float;
+    type Sample: Float;
 
-    fn as_slice(&self) -> &[Self::Float];
-    fn as_mut_slice(&mut self) -> &mut [Self::Float];
+    fn as_slice(&self) -> &[Self::Sample];
+    fn as_mut_slice(&mut self) -> &mut [Self::Sample];
 
-    fn splat(val: Self::Float) -> Self {
+    fn splat(val: Self::Sample) -> Self {
         let mut frm = Self::zero();
         for x in frm.as_mut_slice() {
             *x = val;
@@ -326,30 +525,33 @@ impl<T, const N: usize> Frame for ArrayFrame<T, N>
 where
     T: Float,
 {
-    type Float = T;
+    type Sample = T;
 
-    fn as_slice(&self) -> &[Self::Float] {
+    fn as_slice(&self) -> &[Self::Sample] {
         &self.0
     }
 
-    fn as_mut_slice(&mut self) -> &mut [Self::Float] {
+    fn as_mut_slice(&mut self) -> &mut [Self::Sample] {
         &mut self.0
     }
 }
 
-pub type Flt = f64;
-pub type Frm<const N: usize> = ArrayFrame<Flt, N>;
-pub type Mo = Frm<1>;
-pub type St = Frm<2>;
-pub type Qd = Frm<4>;
+#[cfg(feature = "f64")]
+pub type Fp = f64;
+#[cfg(not(feature = "f64"))]
+pub type Fp = f32;
+
+pub type Mo = ArrayFrame<Fp, 1>;
+pub type St = ArrayFrame<Fp, 2>;
+pub type Qd = ArrayFrame<Fp, 4>;
 
 pub trait Node {
     type Frame: Frame;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame;
+        frames: &mut [Self::Frame],
+    );
 }
 
 #[derive(Debug, Clone, Default)]
@@ -363,11 +565,13 @@ where
 {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        -frm
+        frames: &mut [Self::Frame],
+    ) {
+        for frm in frames {
+            *frm = -*frm;
+        }
     }
 }
 
@@ -376,7 +580,7 @@ pub struct Gain<T>
 where
     T: Frame,
 {
-    pub gain: T::Float,
+    pub gain: T::Sample,
     _marker:  PhantomData<T>,
 }
 
@@ -408,11 +612,13 @@ where
 {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        frm * self.gain
+        frames: &mut [Self::Frame],
+    ) {
+        for frm in frames {
+            *frm *= self.gain;
+        }
     }
 }
 
@@ -422,11 +628,13 @@ pub struct SingleSample<T>(T);
 impl<T: Frame> Node for SingleSample<T> {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        mem::replace(&mut self.0, frm)
+        frames: &mut [Self::Frame],
+    ) {
+        for frm in frames {
+            mem::swap(&mut self.0, frm);
+        }
     }
 }
 
@@ -435,8 +643,8 @@ pub struct OnePole<T>
 where
     T: Frame,
 {
-    b0: T::Float,
-    a1: T::Float,
+    b0: T::Sample,
+    a1: T::Sample,
     y1: T,
 }
 
@@ -466,13 +674,15 @@ where
 impl<T: Frame> Node for OnePole<T> {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        let y0 = frm * self.b0 - self.y1 * self.a1;
-        self.y1 = y0;
-        y0
+        frames: &mut [Self::Frame],
+    ) {
+        for frm in frames {
+            let y0 = *frm * self.b0 - self.y1 * self.a1;
+            self.y1 = y0;
+            *frm = y0;
+        }
     }
 }
 
@@ -486,7 +696,7 @@ pub struct Delay<'a, T>
 where
     T: Frame,
 {
-    pub feedback: T::Float,
+    pub feedback: T::Sample,
     buffer:       &'a mut [T],
     index:        usize,
 }
@@ -510,26 +720,26 @@ where
 {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        let out = self.buffer[self.index];
-        self.buffer[self.index] = frm + out * self.feedback;
-
-        self.index += 1;
-        if self.index == self.buffer.len() {
-            self.index = 0;
+        frames: &mut [Self::Frame],
+    ) {
+        for frm in frames {
+            let y0 = self.buffer[self.index];
+            self.buffer[self.index] = *frm + y0 * self.feedback;
+            self.index += 1;
+            if self.index == self.buffer.len() {
+                self.index = 0;
+            }
+            *frm = y0;
         }
-
-        out
     }
 }
 
 pub struct StackNode<T, F>
 where
     T: Frame,
-    F: FnMut(T) -> T,
+    F: FnMut(&mut [T]),
 {
     func:    F,
     _marker: PhantomData<T>,
@@ -538,7 +748,7 @@ where
 impl<T, F> StackNode<T, F>
 where
     T: Frame,
-    F: FnMut(T) -> T,
+    F: FnMut(&mut [T]),
 {
     pub fn new(func: F) -> Self {
         Self {
@@ -551,15 +761,15 @@ where
 impl<T, F> Node for StackNode<T, F>
 where
     T: Frame,
-    F: FnMut(T) -> T,
+    F: FnMut(&mut [T]),
 {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        (self.func)(frm)
+        frames: &mut [Self::Frame],
+    ) {
+        (self.func)(frames);
     }
 }
 
@@ -567,7 +777,7 @@ pub struct HeapNode<'a, T>
 where
     T: Frame,
 {
-    func: Box<dyn FnMut(T) -> T + 'a>,
+    func: Box<dyn FnMut(&mut [T]) + 'a>,
 }
 
 impl<'a, T> HeapNode<'a, T>
@@ -575,7 +785,7 @@ where
     T: Frame,
 {
     /// Moves `func` to the heap
-    pub fn new(func: impl FnMut(T) -> T + 'a) -> Self {
+    pub fn new(func: impl FnMut(&mut [T]) + 'a) -> Self {
         Self {
             func: Box::new(func),
         }
@@ -588,16 +798,16 @@ where
 {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        (self.func)(frm)
+        frames: &mut [Self::Frame],
+    ) {
+        (self.func)(frames);
     }
 }
 
 pub struct Bus<'a, T> {
-    nodes: Vec<Box<dyn FnMut(T) -> T + 'a>>,
+    nodes: Vec<Box<dyn FnMut(&mut [T]) + 'a>>,
 }
 
 impl<'a, T> Default for Bus<'a, T> {
@@ -617,7 +827,7 @@ impl<'a, T> Bus<'a, T> {
     /// Allocates memory on the heap
     pub fn push(
         &mut self,
-        func: impl FnMut(T) -> T + 'a,
+        func: impl FnMut(&mut [T]) + 'a,
     ) {
         self.nodes.push(Box::new(func));
     }
@@ -628,7 +838,7 @@ impl<'a, T> Bus<'a, T> {
         node: impl Node<Frame = T> + 'a,
     ) {
         let mut node = node;
-        self.push(move |x| node.tick(x));
+        self.push(move |x| node.proc(x));
     }
 }
 
@@ -638,61 +848,55 @@ where
 {
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        self.nodes.iter_mut().fold(frm, |acc, func| func(acc))
-    }
-}
-
-pub struct Mix<'a, T> {
-    nodes: Vec<Box<dyn FnMut(T) -> T + 'a>>,
-}
-
-impl<'a, T> Default for Mix<'a, T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a, T> Mix<'a, T> {
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            nodes: Vec::new()
+        frames: &mut [Self::Frame],
+    ) {
+        for func in &mut self.nodes {
+            func(frames);
         }
     }
-
-    /// Allocates memory on the heap
-    pub fn push(
-        &mut self,
-        func: impl FnMut(T) -> T + 'a,
-    ) {
-        self.nodes.push(Box::new(func));
-    }
-
-    /// Allocates memory on the heap
-    pub fn add_node(
-        &mut self,
-        node: impl Node<Frame = T> + 'a,
-    ) {
-        let mut node = node;
-        self.push(move |x| node.tick(x));
-    }
 }
 
-impl<'a, T> Node for Mix<'a, T>
+#[derive(Debug, Clone)]
+pub struct Sine<T>
 where
     T: Frame,
 {
+    pub phase: T::Sample,
+    pub freq:  T::Sample,
+}
+
+impl<T> Sine<T>
+where
+    T: Frame,
+{
+    pub fn new(freq: T::Sample) -> Self {
+        Self {
+            phase: zero(),
+            freq,
+        }
+    }
+}
+
+impl<T> Node for Sine<T>
+where
+    T: Frame,
+    T::Sample: Real,
+{
     type Frame = T;
 
-    fn tick(
+    fn proc(
         &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        self.nodes.iter_mut().map(|func| func(frm)).sum()
+        frames: &mut [Self::Frame],
+    ) {
+        for frm in frames {
+            *frm = Self::Frame::splat((self.phase * tau()).sin());
+            self.phase += self.freq;
+            while self.phase >= one() {
+                self.phase -= one();
+            }
+        }
     }
 }
 
@@ -706,49 +910,22 @@ fn check_dyn_chain_91() {
     let mut chain = Bus::new();
     chain.add_node(del1);
 
-    chain.push(|x| {
-        gain /= 2.;
-        x * gain
+    chain.push(|frames| {
+        for frm in frames {
+            gain /= 2.;
+            *frm *= gain;
+        }
     });
 
     let silence = St::zero();
     let impulse = St::splat(1.);
 
-    assert_eq!(chain.tick(impulse), silence);
-    assert_eq!(chain.tick(impulse), silence);
-    assert_eq!(chain.tick(silence), impulse * 4.);
-    assert_eq!(chain.tick(silence), impulse * 2.);
-    assert_eq!(chain.tick(silence), silence);
+    let mut frames = [impulse, impulse, silence, silence, silence];
+    let expected = [silence, silence, impulse * 4., impulse * 2., silence];
 
+    chain.proc(&mut frames);
+
+    assert_eq!(frames, expected);
     drop(chain);
-    assert!((gain - 1.).abs() < Flt::EPSILON);
-}
-
-#[test]
-fn check_dyn_mix_91() {
-    let mut buf = alloc_buffer(2);
-    let del1 = Delay::new(&mut buf);
-
-    let mut gain = 32.;
-    let mut mix = Mix::new();
-    mix.add_node(del1);
-
-    mix.push(|x| {
-        gain /= 2.;
-        x * gain
-    });
-
-    let silence = St::zero();
-    let impulse = St::splat(1.);
-
-    assert_eq!(mix.tick(impulse), impulse * 16.);
-    assert_eq!(mix.tick(impulse), impulse * 8.);
-    assert_eq!(mix.tick(impulse), impulse * (4. + 1.));
-    assert_eq!(mix.tick(impulse), impulse * (2. + 1.));
-    assert_eq!(mix.tick(silence), impulse);
-    assert_eq!(mix.tick(silence), impulse);
-    assert_eq!(mix.tick(silence), silence);
-
-    drop(mix);
-    assert!((gain - 0.25).abs() < Flt::EPSILON);
+    assert!((gain - 1.).abs() < Fp::EPSILON);
 }

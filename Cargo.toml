@@ -3,5 +3,8 @@ name = "sn_dsp"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["f64"]
+f64 = []
 
 [dependencies]
