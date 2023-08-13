@@ -337,16 +337,11 @@ where
     }
 }
 
-pub type Frm32<const N: usize> = ArrayFrame<f32, N>;
-pub type Frm64<const N: usize> = ArrayFrame<f64, N>;
-
-pub type Mono<T> = ArrayFrame<T, 1>;
-pub type Stereo<T> = ArrayFrame<T, 2>;
-pub type Quad<T> = ArrayFrame<T, 4>;
-
-pub type Mo = Mono<f64>;
-pub type St = Stereo<f64>;
-pub type Qd = Quad<f64>;
+pub type Flt = f64;
+pub type Frm<const N: usize> = ArrayFrame<Flt, N>;
+pub type Mo = Frm<1>;
+pub type St = Frm<2>;
+pub type Qd = Frm<4>;
 
 pub trait Node {
     type Frame: Frame;
@@ -357,21 +352,7 @@ pub trait Node {
     ) -> Self::Frame;
 }
 
-impl<T> Node for &mut T
-where
-    T: Node,
-{
-    type Frame = T::Frame;
-
-    fn tick(
-        &mut self,
-        frm: Self::Frame,
-    ) -> Self::Frame {
-        (*self).tick(frm)
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct PhaseFlip<T> {
     _marker: PhantomData<T>,
 }
@@ -395,8 +376,30 @@ pub struct Gain<T>
 where
     T: Frame,
 {
-    gain:    T::Float,
-    _marker: PhantomData<T>,
+    pub gain: T::Float,
+    _marker:  PhantomData<T>,
+}
+
+impl<T> Default for Gain<T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> Gain<T>
+where
+    T: Frame,
+{
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            gain:    one(),
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<T> Node for Gain<T>
@@ -427,7 +430,7 @@ impl<T: Frame> Node for SingleSample<T> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct OnePole<T>
 where
     T: Frame,
@@ -435,6 +438,29 @@ where
     b0: T::Float,
     a1: T::Float,
     y1: T,
+}
+
+impl<T> Default for OnePole<T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> OnePole<T>
+where
+    T: Frame,
+{
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            b0: one(),
+            a1: zero(),
+            y1: zero(),
+        }
+    }
 }
 
 impl<T: Frame> Node for OnePole<T> {
@@ -514,7 +540,6 @@ where
     T: Frame,
     F: FnMut(T) -> T,
 {
-    // Moves `func` to the heap
     pub fn new(func: F) -> Self {
         Self {
             func,
@@ -549,7 +574,7 @@ impl<'a, T> HeapNode<'a, T>
 where
     T: Frame,
 {
-    // Moves `func` to the heap
+    /// Moves `func` to the heap
     pub fn new(func: impl FnMut(T) -> T + 'a) -> Self {
         Self {
             func: Box::new(func),
@@ -696,7 +721,7 @@ fn check_dyn_chain_91() {
     assert_eq!(chain.tick(silence), silence);
 
     drop(chain);
-    assert_eq!(gain, 1.);
+    assert!((gain - 1.).abs() < Flt::EPSILON);
 }
 
 #[test]
@@ -725,5 +750,5 @@ fn check_dyn_mix_91() {
     assert_eq!(mix.tick(silence), silence);
 
     drop(mix);
-    assert_eq!(gain, 0.25);
+    assert!((gain - 0.25).abs() < Flt::EPSILON);
 }
