@@ -1,10 +1,10 @@
 use sn_dsp::prelude::*;
 
 // Frame type
-type Typ = StSimd;
+type Typ = Sdf<Fp, 2>;
 
 #[test]
-fn check_dyn_chain_91() {
+fn check_dyn_chain_simd_91() {
     let silence = Typ::zero();
     let impulse = splat(1.);
 

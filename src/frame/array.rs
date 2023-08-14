@@ -23,21 +23,15 @@ use crate::num::{
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Arf<T, const N: usize>([T; N]);
 
-impl<T, const N: usize> Default for Arf<T, N>
-where
-    T: Float,
-{
-    fn default() -> Self {
-        Self::zero()
+impl<T, const N: usize> From<[T; N]> for Arf<T, N> {
+    fn from(value: [T; N]) -> Self {
+        Self(value)
     }
 }
 
-impl<T, const N: usize> From<[T; N]> for Arf<T, N>
-where
-    T: Float,
-{
-    fn from(value: [T; N]) -> Self {
-        Self(value)
+impl<T, const N: usize> From<Arf<T, N>> for [T; N] {
+    fn from(value: Arf<T, N>) -> Self {
+        value.0
     }
 }
 
@@ -47,6 +41,15 @@ where
 {
     fn zero() -> Self {
         Self([T::zero(); N])
+    }
+}
+
+impl<T, const N: usize> Default for Arf<T, N>
+where
+    T: Float,
+{
+    fn default() -> Self {
+        Self::zero()
     }
 }
 

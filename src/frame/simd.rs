@@ -18,18 +18,73 @@ use std::{
     },
 };
 
-use super::Frame;
+use super::{
+    Arf,
+    Frame,
+};
 use crate::num::{
     Float,
     Zero,
 };
 
-/// A frame of samples implemented as Simd vector
+/// Frame of samples implemented as SIMD vector.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Sdf<T, const N: usize>(Simd<T, N>)
 where
     LaneCount<N>: SupportedLaneCount,
     T: SimdElement;
+
+impl<T, const N: usize> From<[T; N]> for Sdf<T, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+{
+    fn from(value: [T; N]) -> Self {
+        Self(value.into())
+    }
+}
+
+impl<T, const N: usize> From<Sdf<T, N>> for [T; N]
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+{
+    fn from(value: Sdf<T, N>) -> Self {
+        value.0.to_array()
+    }
+}
+
+impl<T, const N: usize> From<Simd<T, N>> for Sdf<T, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+{
+    fn from(value: Simd<T, N>) -> Self {
+        Self(value)
+    }
+}
+
+impl<T, const N: usize> From<Arf<T, N>> for Sdf<T, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+{
+    fn from(value: Arf<T, N>) -> Self {
+        let arr: [T; N] = value.into();
+        Self(arr.into())
+    }
+}
+
+impl<T, const N: usize> From<Sdf<T, N>> for Arf<T, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+{
+    fn from(value: Sdf<T, N>) -> Self {
+        let arr: [T; N] = value.into();
+        arr.into()
+    }
+}
 
 impl<T, const N: usize> Zero for Sdf<T, N>
 where
@@ -77,7 +132,7 @@ where
         &mut self,
         rhs: Self,
     ) {
-        self.0 += rhs.0
+        self.0 += rhs.0;
     }
 }
 
@@ -107,7 +162,7 @@ where
         &mut self,
         rhs: Self,
     ) {
-        self.0 -= rhs.0
+        self.0 -= rhs.0;
     }
 }
 
@@ -123,7 +178,7 @@ where
         rhs: T,
     ) -> Self::Output {
         self.0.as_mut_array().iter_mut().for_each(|x| {
-            *x = *x * rhs;
+            *x *= rhs;
         });
         self
     }
@@ -187,5 +242,9 @@ where
 
     fn as_mut_slice(&mut self) -> &mut [Self::Sample] {
         self.0.as_mut_array().as_mut_slice()
+    }
+
+    fn splat(value: Self::Sample) -> Self {
+        Self(Simd::splat(value))
     }
 }

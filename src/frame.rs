@@ -17,19 +17,15 @@ use crate::num::{
     Zero,
 };
 
-mod arf;
-pub use arf::Arf;
+mod array;
+pub use array::Arf;
 
-mod sdf;
-pub use sdf::Sdf;
+mod simd;
+pub use simd::Sdf;
 
 pub type Mo = Arf<Fp, 1>;
 pub type St = Arf<Fp, 2>;
 pub type Qd = Arf<Fp, 4>;
-
-pub type MoSimd = Sdf<Fp, 1>;
-pub type StSimd = Sdf<Fp, 2>;
-pub type QdSimd = Sdf<Fp, 4>;
 
 pub trait Frame:
     Default
