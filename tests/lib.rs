@@ -10,8 +10,8 @@ fn check_dyn_chain_91() {
 
     let mut gain = 32.;
 
-    let mut buf = alloc_buffer(2);
-    let mut del1 = dsp::Delay::new(&mut buf);
+    let buf = alloc_buffer(2);
+    let mut del1 = dsp::Del::new(buf);
 
     let mut chain = Bus::new();
     chain.push(|f| del1.proc(f));

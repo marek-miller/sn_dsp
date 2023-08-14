@@ -1,6 +1,7 @@
 use std::mem;
 
 use crate::{
+    alloc_buffer,
     frame::Frame,
     node::Node,
     num::{
@@ -26,29 +27,46 @@ impl<T: Frame> Node for SingleSample<T> {
 }
 
 #[derive(Debug)]
-pub struct Delay<'a, T>
+pub struct Del<T>
 where
     T: Frame,
 {
     pub feedback: Fp,
-    buffer:       &'a mut [T],
+    buffer:       Box<[T]>,
     index:        usize,
 }
 
-impl<'a, T> Delay<'a, T>
+impl<T> Del<T>
 where
     T: Frame,
 {
-    pub fn new(buffer: &'a mut [T]) -> Self {
+    pub fn new(buffer: Box<[T]>) -> Self {
         Self {
             buffer,
             index: 0,
             feedback: 0.,
         }
     }
+
+    // Alloce memory for a new buffer on the heap
+    pub fn alloc_new(size: usize) -> Self {
+        Self::new(alloc_buffer(size))
+    }
+
+    pub fn buffer(&self) -> &[T] {
+        &self.buffer
+    }
+
+    pub fn buffer_mut(&mut self) -> &mut [T] {
+        &mut self.buffer
+    }
+
+    pub fn into_buffer(self) -> Box<[T]> {
+        self.buffer
+    }
 }
 
-impl<'a, T> Node for Delay<'a, T>
+impl<T> Node for Del<T>
 where
     T: Frame,
 {
