@@ -27,30 +27,19 @@ impl<T: Frame> Node for SingleSample<T> {
 }
 
 #[derive(Debug)]
-pub struct Del<T>
-where
-    T: Frame,
-{
+pub struct Del<T> {
     pub feedback: Fp,
     buffer:       Box<[T]>,
     index:        usize,
 }
 
-impl<T> Del<T>
-where
-    T: Frame,
-{
+impl<T> Del<T> {
     pub fn new(buffer: Box<[T]>) -> Self {
         Self {
             buffer,
             index: 0,
             feedback: 0.,
         }
-    }
-
-    // Alloce memory for a new buffer on the heap
-    pub fn alloc_new(size: usize) -> Self {
-        Self::new(alloc_buffer(size))
     }
 
     pub fn buffer(&self) -> &[T] {
@@ -63,6 +52,16 @@ where
 
     pub fn into_buffer(self) -> Box<[T]> {
         self.buffer
+    }
+}
+
+impl<T> Del<T>
+where
+    T: Default,
+{
+    // Alloce memory for a new buffer on the heap
+    pub fn alloc_new(size: usize) -> Self {
+        Self::new(alloc_buffer(size))
     }
 }
 
