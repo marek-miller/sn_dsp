@@ -2,11 +2,9 @@ use std::mem;
 
 use crate::{
     alloc_buffer,
+    bus::Bus,
     frame::Frame,
-    node::{
-        HeapNode,
-        Node,
-    },
+    node::Node,
     num::{
         zero,
         Float,
@@ -37,6 +35,7 @@ pub struct Del<T> {
 }
 
 impl<T> Del<T> {
+    #[must_use]
     pub fn new(buffer: Box<[T]>) -> Self {
         Self {
             buffer,
@@ -44,6 +43,7 @@ impl<T> Del<T> {
         }
     }
 
+    #[must_use]
     pub fn buffer(&self) -> &[T] {
         &self.buffer
     }
@@ -52,6 +52,7 @@ impl<T> Del<T> {
         &mut self.buffer
     }
 
+    #[must_use]
     pub fn into_buffer(self) -> Box<[T]> {
         self.buffer
     }
@@ -62,6 +63,7 @@ where
     T: Default,
 {
     // Allocate memory for a new buffer on the heap
+    #[must_use]
     pub fn alloc_new(size: usize) -> Self {
         Self::new(alloc_buffer(size))
     }
@@ -92,27 +94,44 @@ where
 pub struct Fbk<'a, T> {
     feedback:     Fp,
     ss_del_frame: T,
-    node:         Option<HeapNode<'a, T>>,
+    bus:          Bus<'a, T>,
+}
+
+impl<'a, T> Default for Fbk<'a, T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<'a, T> Fbk<'a, T>
 where
     T: Frame,
 {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             feedback:     0.,
             ss_del_frame: zero(),
-            node:         None,
+            bus:          Bus::new(),
         }
     }
 
-    pub fn with_node(node: HeapNode<'a, T>) -> Self {
-        let mut fbk = Self::new();
-        fbk.node = Some(node);
-        fbk
+    pub fn bus(&self) -> &Bus<'a, T> {
+        &self.bus
     }
 
+    pub fn bus_mut(&mut self) -> &mut Bus<'a, T> {
+        &mut self.bus
+    }
+
+    pub fn into_bus(self) -> Bus<'a, T> {
+        self.bus
+    }
+
+    #[must_use]
     pub fn with_feedback(value: Fp) -> Self {
         let mut fbk = Self::new();
         fbk.feedback = value;
@@ -129,13 +148,6 @@ where
     ) {
         self.feedback = value;
     }
-
-    pub fn swap_node(
-        &mut self,
-        node: HeapNode<'a, T>,
-    ) -> Option<HeapNode<'a, T>> {
-        mem::replace(&mut self.node, Some(node))
-    }
 }
 
 impl<'a, T> Node for Fbk<'a, T>
@@ -150,9 +162,7 @@ where
     ) {
         for frm in frames {
             let y = &mut [*frm + self.ss_del_frame * self.feedback.to_float()];
-            if let Some(node) = &mut self.node {
-                node.proc(y);
-            }
+            self.bus.proc(y);
             self.ss_del_frame = y[0];
             *frm = y[0];
         }

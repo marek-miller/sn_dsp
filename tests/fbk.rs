@@ -17,11 +17,10 @@ fn check_fbk_neutral_01() {
 #[test]
 fn check_fbk_del_01() {
     let buf = alloc_buffer::<Mo>(2);
-    let mut del = dsp::Del::new(buf);
-    let node = heapnode(|frames| del.proc(frames));
+    let del = dsp::Del::new(buf);
 
-    let mut fbk = dsp::Fbk::with_node(node);
-    fbk.set_feedback(0.5);
+    let mut fbk = dsp::Fbk::with_feedback(0.5);
+    fbk.bus_mut().node_push(del);
 
     let sil = zero();
     let imp = splat(1.);
@@ -36,14 +35,13 @@ fn check_fbk_del_01() {
 #[test]
 fn check_fbk_del_02() {
     let buf = alloc_buffer::<Mo>(2);
-    let mut del = dsp::Del::new(buf);
-    let node = heapnode(|frames| del.proc(frames));
+    let del = dsp::Del::new(buf);
 
-    let mut fbk = dsp::Fbk::with_node(node);
-    fbk.set_feedback(0.5);
+    let mut fbk = dsp::Fbk::with_feedback(0.5);
+    fbk.bus_mut().node_push(del);
 
     let mut chain = Bus::new();
-    chain.add_node(fbk);
+    chain.node_push(fbk);
 
     let sil = zero();
     let imp = splat(1.);

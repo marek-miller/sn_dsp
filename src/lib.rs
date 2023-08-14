@@ -9,6 +9,7 @@
 // #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
+pub mod bus;
 pub mod delay;
 pub mod filter;
 pub mod frame;

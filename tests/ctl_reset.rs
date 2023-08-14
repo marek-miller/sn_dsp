@@ -42,7 +42,7 @@ fn check_control_01() {
 
     mock.control(|fbk| *fbk.a = 11.);
 
-    assert_eq!(mock.feedback, 12.)
+    assert_eq!(mock.feedback, 12.);
 }
 
 #[test]
@@ -54,7 +54,7 @@ fn check_reset_01() {
 
     mock.control(|fbk| fbk.reset());
 
-    assert_eq!(mock.feedback, 78.)
+    assert_eq!(mock.feedback, 78.);
 }
 
 #[test]
@@ -66,7 +66,7 @@ fn check_reset_impl() {
 
     mock.reset();
 
-    assert_eq!(mock.feedback, 78.)
+    assert_eq!(mock.feedback, 78.);
 }
 
 struct Mock2 {

@@ -9,13 +9,13 @@ pub use types::*;
 
 pub use crate::{
     alloc_buffer,
+    bus::Bus,
     frame::{
         splat,
         Arf,
     },
     node::{
         heapnode,
-        Bus,
         HeapNode,
         StackNode,
     },

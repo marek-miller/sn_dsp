@@ -55,7 +55,16 @@ where
     }
 }
 
-#[allow(missing_debug_implementations)]
+impl<T, F> From<F> for StackNode<T, F>
+where
+    T: Frame,
+    F: FnMut(&mut [T]),
+{
+    fn from(value: F) -> Self {
+        Self::new(value)
+    }
+}
+
 pub struct HeapNode<'a, T> {
     f: Box<dyn FnMut(&mut [T]) + 'a>,
 }
@@ -66,7 +75,7 @@ impl<'a, T> Debug for HeapNode<'a, T> {
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         f.debug_struct("HeapNode")
-            .field("func", &format_args!("Box<dyn FnMut>"))
+            .field("func", &format_args!("Box<dyn FnMut(..)>"))
             .finish()
     }
 }
@@ -75,21 +84,31 @@ impl<'a, T> HeapNode<'a, T>
 where
     T: Frame,
 {
-    /// Move closure `f` to the heap
-    pub fn new(f: impl FnMut(&mut [T]) + 'a) -> Self {
+    #[must_use]
+    pub fn new(f: Box<dyn FnMut(&mut [T]) + 'a>) -> Self {
         Self {
-            f: Box::new(f)
+            f,
         }
     }
 
+    #[must_use]
     pub fn as_box(self) -> Box<dyn FnMut(&mut [T]) + 'a> {
         self.f
     }
 }
 
+impl<'a, T> From<Box<dyn FnMut(&mut [T]) + 'a>> for HeapNode<'a, T>
+where
+    T: Frame,
+{
+    fn from(value: Box<dyn FnMut(&mut [T]) + 'a>) -> Self {
+        Self::new(value)
+    }
+}
+
 /// Move closure `f` to the heap
 pub fn heapnode<'a, T: Frame>(f: impl FnMut(&mut [T]) + 'a) -> HeapNode<'a, T> {
-    HeapNode::new(f)
+    HeapNode::new(Box::new(f))
 }
 
 impl<'a, T> Node for HeapNode<'a, T>
@@ -103,70 +122,5 @@ where
         frames: &mut [Self::Frame],
     ) {
         (self.f)(frames);
-    }
-}
-
-pub struct Bus<'a, T> {
-    nodes: Vec<Box<dyn FnMut(&mut [T]) + 'a>>,
-}
-
-impl<'a, T> Debug for Bus<'a, T> {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        f.debug_struct("Bus")
-            .field("nodes", &format_args!("[Box<dyn FnMut>]"))
-            .finish()
-    }
-}
-
-impl<'a, T> Default for Bus<'a, T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a, T> Bus<'a, T> {
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            nodes: Vec::new()
-        }
-    }
-
-    /// Move closure `f` to the heap
-    pub fn push(
-        &mut self,
-        f: impl FnMut(&mut [T]) + 'a,
-    ) {
-        self.nodes.push(Box::new(f));
-    }
-
-    pub fn add_node<N>(
-        &mut self,
-        node: N,
-    ) where
-        T: Frame,
-        N: Node<Frame = T> + 'a,
-    {
-        let mut node = node;
-        self.nodes.push(Box::new(move |x| node.proc(x)));
-    }
-}
-
-impl<'a, T> Node for Bus<'a, T>
-where
-    T: Frame,
-{
-    type Frame = T;
-
-    fn proc(
-        &mut self,
-        frames: &mut [Self::Frame],
-    ) {
-        for func in &mut self.nodes {
-            func(frames);
-        }
     }
 }
