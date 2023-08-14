@@ -19,15 +19,6 @@ where
     _marker:  PhantomData<T>,
 }
 
-impl<T> Default for Gain<T>
-where
-    T: Frame,
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<T> Gain<T>
 where
     T: Frame,
@@ -38,6 +29,15 @@ where
             gain:    one(),
             _marker: PhantomData,
         }
+    }
+}
+
+impl<T> Default for Gain<T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 

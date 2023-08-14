@@ -12,10 +12,29 @@ use crate::{
     },
 };
 
-#[derive(Debug, Default)]
-pub struct SingleSample<T>(T);
+#[derive(Debug)]
+pub struct Single<T>(T);
 
-impl<T: Frame> Node for SingleSample<T> {
+impl<T> Single<T>
+where
+    T: Frame,
+{
+    #[must_use]
+    pub fn new() -> Self {
+        Self(zero())
+    }
+}
+
+impl<T> Default for Single<T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T: Frame> Node for Single<T> {
     type Frame = T;
 
     fn proc(
@@ -58,6 +77,12 @@ impl<T> Del<T> {
     }
 }
 
+impl<T> From<Box<[T]>> for Del<T> {
+    fn from(value: Box<[T]>) -> Self {
+        Self::new(value)
+    }
+}
+
 impl<T> Del<T>
 where
     T: Default,
@@ -90,20 +115,12 @@ where
         }
     }
 }
+
 #[derive(Debug)]
 pub struct Fbk<'a, T> {
     feedback:     Fp,
     ss_del_frame: T,
     bus:          Bus<'a, T>,
-}
-
-impl<'a, T> Default for Fbk<'a, T>
-where
-    T: Frame,
-{
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl<'a, T> Fbk<'a, T>
@@ -134,19 +151,25 @@ where
     #[must_use]
     pub fn with_feedback(value: Fp) -> Self {
         let mut fbk = Self::new();
-        fbk.feedback = value;
+        *fbk.feedback_mut() = value;
         fbk
     }
 
-    pub fn feedback(&self) -> Fp {
-        self.feedback
+    pub fn feedback(&self) -> &Fp {
+        &self.feedback
     }
 
-    pub fn set_feedback(
-        &mut self,
-        value: Fp,
-    ) {
-        self.feedback = value;
+    pub fn feedback_mut(&mut self) -> &mut Fp {
+        &mut self.feedback
+    }
+}
+
+impl<'a, T> Default for Fbk<'a, T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 

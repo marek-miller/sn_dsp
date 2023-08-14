@@ -33,6 +33,12 @@ impl<T> Sine<T> {
     }
 }
 
+impl<T> From<Fp> for Sine<T> {
+    fn from(value: Fp) -> Self {
+        Self::new(value)
+    }
+}
+
 impl<T> Node for Sine<T>
 where
     T: Frame,
@@ -76,6 +82,7 @@ impl<'a, T> Wt<'a, T> {
         }
     }
 }
+
 impl<'a, T> Node for Wt<'a, T>
 where
     T: Frame,

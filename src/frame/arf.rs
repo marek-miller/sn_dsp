@@ -21,9 +21,7 @@ use crate::num::{
 
 /// Array frame
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Arf<T, const N: usize>([T; N])
-where
-    T: Float;
+pub struct Arf<T, const N: usize>([T; N]);
 
 impl<T, const N: usize> Default for Arf<T, N>
 where
@@ -31,6 +29,15 @@ where
 {
     fn default() -> Self {
         Self::zero()
+    }
+}
+
+impl<T, const N: usize> From<[T; N]> for Arf<T, N>
+where
+    T: Float,
+{
+    fn from(value: [T; N]) -> Self {
+        Self(value)
     }
 }
 
@@ -175,24 +182,6 @@ where
 
     fn as_mut_slice(&mut self) -> &mut [Self::Sample] {
         &mut self.0
-    }
-}
-
-impl<T, const N: usize> From<[T; N]> for Arf<T, N>
-where
-    T: Float,
-{
-    fn from(value: [T; N]) -> Self {
-        Self(value)
-    }
-}
-
-impl<T, const N: usize> From<Arf<T, N>> for [T; N]
-where
-    T: Float,
-{
-    fn from(value: Arf<T, N>) -> Self {
-        value.0
     }
 }
 

@@ -67,7 +67,7 @@ pub mod dsp {
         fbk::{
             Del,
             Fbk,
-            SingleSample,
+            Single,
         },
         filter::{
             butter_hipass,

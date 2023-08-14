@@ -20,15 +20,6 @@ where
     y1: T,
 }
 
-impl<T> Default for OnePole<T>
-where
-    T: Frame,
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<T> OnePole<T>
 where
     T: Frame,
@@ -40,6 +31,15 @@ where
             a1: zero(),
             y1: zero(),
         }
+    }
+}
+
+impl<T> Default for OnePole<T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -77,6 +77,15 @@ where
             x1: zero(),
             y1: zero(),
         }
+    }
+}
+
+impl<T> From<Fp> for DCBlock<T>
+where
+    T: Frame,
+{
+    fn from(value: Fp) -> Self {
+        Self::new(value)
     }
 }
 
@@ -228,6 +237,32 @@ where
             y2: zero(),
         }
     }
+
+    pub fn coeffs(&self) -> &BiquadCoefs {
+        &self.coefs
+    }
+
+    pub fn coeffs_mut(&mut self) -> &mut BiquadCoefs {
+        &mut self.coefs
+    }
+}
+
+impl<T> Default for Biquad<T>
+where
+    T: Frame,
+{
+    fn default() -> Self {
+        Self::new(BiquadCoefs::default())
+    }
+}
+
+impl<T> From<BiquadCoefs> for Biquad<T>
+where
+    T: Frame,
+{
+    fn from(value: BiquadCoefs) -> Self {
+        Self::new(value)
+    }
 }
 
 impl<T> Node for Biquad<T>
@@ -293,6 +328,15 @@ where
         Self {
             filters: [0; N].map(|_| butter_lowpass(cutoff)),
         }
+    }
+}
+
+impl<const N: usize, T> From<Fp> for Lpf<N, T>
+where
+    T: Frame,
+{
+    fn from(value: Fp) -> Self {
+        Self::new(value)
     }
 }
 

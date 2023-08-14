@@ -12,23 +12,6 @@ pub struct Bus<'a, T> {
     nodes: Vec<Box<dyn Node<Frame = T> + 'a>>,
 }
 
-impl<'a, T> Debug for Bus<'a, T> {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        f.debug_struct("Bus")
-            .field("nodes", &format_args!("Vec<Box<dyn Node>>"))
-            .finish()
-    }
-}
-
-impl<'a, T> Default for Bus<'a, T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<'a, T> Bus<'a, T> {
     #[must_use]
     pub fn new() -> Self {
@@ -37,10 +20,12 @@ impl<'a, T> Bus<'a, T> {
         }
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.nodes.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.nodes.is_empty()
     }
@@ -64,7 +49,7 @@ impl<'a, T> Bus<'a, T> {
         index: usize,
         node: Box<dyn Node<Frame = T> + 'a>,
     ) {
-        self.nodes.insert(index, node)
+        self.nodes.insert(index, node);
     }
 
     /// # Panics
@@ -112,7 +97,24 @@ impl<'a, T> Bus<'a, T> {
         T: Frame,
         N: Node<Frame = T> + 'a,
     {
-        self.insert(index, Box::new(node))
+        self.insert(index, Box::new(node));
+    }
+}
+
+impl<'a, T> Debug for Bus<'a, T> {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        f.debug_struct("Bus")
+            .field("nodes", &format_args!("Vec<Box<dyn Node>>"))
+            .finish()
+    }
+}
+
+impl<'a, T> Default for Bus<'a, T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

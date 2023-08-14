@@ -92,7 +92,16 @@ where
     }
 
     #[must_use]
-    pub fn as_box(self) -> Box<dyn FnMut(&mut [T]) + 'a> {
+    pub fn as_box(&self) -> &Box<dyn FnMut(&mut [T]) + 'a> {
+        &self.f
+    }
+
+    pub fn as_box_mut(&mut self) -> &mut Box<dyn FnMut(&mut [T]) + 'a> {
+        &mut self.f
+    }
+
+    #[must_use]
+    pub fn into_box(self) -> Box<dyn FnMut(&mut [T]) + 'a> {
         self.f
     }
 }
