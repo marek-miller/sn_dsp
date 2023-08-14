@@ -19,7 +19,8 @@ fn check_fbk_del_01() {
     let buf = alloc_buffer::<Mo>(2);
     let del = dsp::Del::new(buf);
 
-    let mut fbk = dsp::Fbk::with_feedback(0.5);
+    let mut fbk = dsp::Fbk::new();
+    *fbk.feedback_mut() = 0.5;
     fbk.bus_mut().node_push(del);
 
     let sil = zero();
@@ -37,7 +38,9 @@ fn check_fbk_del_02() {
     let buf = alloc_buffer::<Mo>(2);
     let del = dsp::Del::new(buf);
 
-    let mut fbk = dsp::Fbk::with_feedback(0.5);
+    let mut fbk = dsp::Fbk::new();
+    *fbk.feedback_mut() = 0.5;
+
     fbk.bus_mut().node_push(del);
 
     let mut chain = Bus::new();

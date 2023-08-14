@@ -124,8 +124,9 @@ where
     }
 }
 
-impl<T> Node for Del<T>
+impl<T, A> Node for Del<T, A>
 where
+    A: Allocator,
     T: Frame,
 {
     type Frame = T;
@@ -147,10 +148,13 @@ where
 }
 
 #[derive(Debug)]
-pub struct Fbk<'a, T> {
+pub struct Fbk<'a, T, A = Global>
+where
+    A: Allocator,
+{
     feedback:     Fp,
     ss_del_frame: T,
-    bus:          Bus<'a, T>,
+    bus:          Bus<'a, T, A>,
 }
 
 impl<'a, T> Fbk<'a, T>
@@ -165,33 +169,6 @@ where
             bus:          Bus::new(),
         }
     }
-
-    pub fn bus(&self) -> &Bus<'a, T> {
-        &self.bus
-    }
-
-    pub fn bus_mut(&mut self) -> &mut Bus<'a, T> {
-        &mut self.bus
-    }
-
-    pub fn into_bus(self) -> Bus<'a, T> {
-        self.bus
-    }
-
-    #[must_use]
-    pub fn with_feedback(value: Fp) -> Self {
-        let mut fbk = Self::new();
-        *fbk.feedback_mut() = value;
-        fbk
-    }
-
-    pub fn feedback(&self) -> &Fp {
-        &self.feedback
-    }
-
-    pub fn feedback_mut(&mut self) -> &mut Fp {
-        &mut self.feedback
-    }
 }
 
 impl<'a, T> Default for Fbk<'a, T>
@@ -203,8 +180,44 @@ where
     }
 }
 
-impl<'a, T> Node for Fbk<'a, T>
+impl<'a, T, A> Fbk<'a, T, A>
 where
+    A: Allocator,
+    T: Frame,
+{
+    #[must_use]
+    pub fn new_in(alloc: A) -> Self {
+        Self {
+            feedback:     0.,
+            ss_del_frame: zero(),
+            bus:          Bus::new_in(alloc),
+        }
+    }
+
+    pub fn bus(&self) -> &Bus<'a, T, A> {
+        &self.bus
+    }
+
+    pub fn bus_mut(&mut self) -> &mut Bus<'a, T, A> {
+        &mut self.bus
+    }
+
+    pub fn into_bus(self) -> Bus<'a, T, A> {
+        self.bus
+    }
+
+    pub fn feedback(&self) -> &Fp {
+        &self.feedback
+    }
+
+    pub fn feedback_mut(&mut self) -> &mut Fp {
+        &mut self.feedback
+    }
+}
+
+impl<'a, T, A> Node for Fbk<'a, T, A>
+where
+    A: Allocator,
     T: Frame,
 {
     type Frame = T;

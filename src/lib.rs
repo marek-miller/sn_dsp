@@ -43,6 +43,7 @@ where
     for i in 0..size {
         b[i].write(T::default());
     }
+    // SAFETY: All allocated memory has just been initialized
     unsafe { b.assume_init() }
 }
 

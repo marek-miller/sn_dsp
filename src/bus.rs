@@ -63,7 +63,7 @@ impl<'a, T> Default for Bus<'a, T> {
 
 impl<'a, T, A> Bus<'a, T, A>
 where
-    A: Allocator + Clone,
+    A: Allocator,
 {
     pub fn new_in(alloc: A) -> Self {
         Self {
