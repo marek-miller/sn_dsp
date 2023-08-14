@@ -1,4 +1,8 @@
 use std::{
+    alloc::{
+        Allocator,
+        Global,
+    },
     fmt::Debug,
     mem,
 };
@@ -8,8 +12,11 @@ use crate::{
     node::Node,
 };
 
-pub struct Bus<'a, T> {
-    nodes: Vec<Box<dyn Node<Frame = T> + 'a>>,
+pub struct Bus<'a, T, A = Global>
+where
+    A: Allocator,
+{
+    nodes: Vec<Box<dyn Node<Frame = T> + 'a, A>, A>,
 }
 
 impl<'a, T> Bus<'a, T> {
@@ -18,59 +25,6 @@ impl<'a, T> Bus<'a, T> {
         Self {
             nodes: Vec::new()
         }
-    }
-
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.nodes.len()
-    }
-
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
-
-    pub fn push(
-        &mut self,
-        node: Box<dyn Node<Frame = T> + 'a>,
-    ) {
-        self.nodes.push(node);
-    }
-
-    pub fn pop(&mut self) -> Option<Box<dyn Node<Frame = T> + 'a>> {
-        self.nodes.pop()
-    }
-
-    /// # Panics
-    ///
-    /// Panics if `index > len`
-    pub fn insert(
-        &mut self,
-        index: usize,
-        node: Box<dyn Node<Frame = T> + 'a>,
-    ) {
-        self.nodes.insert(index, node);
-    }
-
-    /// # Panics
-    ///
-    /// Panics if index is out of bounds.
-    pub fn remove(
-        &mut self,
-        index: usize,
-    ) -> Box<dyn Node<Frame = T> + 'a> {
-        self.nodes.remove(index)
-    }
-
-    /// # Panics
-    ///
-    /// Panics if index is out of bounds.
-    pub fn replace(
-        &mut self,
-        index: usize,
-        node: Box<dyn Node<Frame = T> + 'a>,
-    ) -> Box<dyn Node<Frame = T> + 'a> {
-        mem::replace(&mut self.nodes[index], node)
     }
 
     /// Allocates memory on the heap
@@ -101,7 +55,106 @@ impl<'a, T> Bus<'a, T> {
     }
 }
 
-impl<'a, T> Debug for Bus<'a, T> {
+impl<'a, T> Default for Bus<'a, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, T, A> Bus<'a, T, A>
+where
+    A: Allocator + Clone,
+{
+    pub fn new_in(alloc: A) -> Self {
+        Self {
+            nodes: Vec::new_in(alloc),
+        }
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.nodes.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
+
+    pub fn push(
+        &mut self,
+        node: Box<dyn Node<Frame = T> + 'a, A>,
+    ) {
+        self.nodes.push(node);
+    }
+
+    pub fn pop(&mut self) -> Option<Box<dyn Node<Frame = T> + 'a, A>> {
+        self.nodes.pop()
+    }
+
+    /// # Panics
+    ///
+    /// Panics if `index > len`
+    pub fn insert(
+        &mut self,
+        index: usize,
+        node: Box<dyn Node<Frame = T> + 'a, A>,
+    ) {
+        self.nodes.insert(index, node);
+    }
+
+    /// # Panics
+    ///
+    /// Panics if index is out of bounds.
+    pub fn remove(
+        &mut self,
+        index: usize,
+    ) -> Box<dyn Node<Frame = T> + 'a, A> {
+        self.nodes.remove(index)
+    }
+
+    /// # Panics
+    ///
+    /// Panics if index is out of bounds.
+    pub fn replace(
+        &mut self,
+        index: usize,
+        node: Box<dyn Node<Frame = T> + 'a, A>,
+    ) -> Box<dyn Node<Frame = T> + 'a, A> {
+        mem::replace(&mut self.nodes[index], node)
+    }
+
+    pub fn node_push_in<N>(
+        &mut self,
+        node: N,
+        alloc: A,
+    ) where
+        T: Frame,
+        N: Node<Frame = T> + 'a,
+    {
+        self.push(Box::new_in(node, alloc));
+    }
+
+    /// # Panics
+    ///
+    /// Panics if `index > len`
+    pub fn node_insert_in<N>(
+        &mut self,
+        index: usize,
+        node: N,
+        alloc: A,
+    ) where
+        T: Frame,
+        N: Node<Frame = T> + 'a,
+    {
+        self.insert(index, Box::new_in(node, alloc));
+    }
+}
+
+impl<'a, T, A> Debug for Bus<'a, T, A>
+where
+    A: Allocator,
+{
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -112,14 +165,9 @@ impl<'a, T> Debug for Bus<'a, T> {
     }
 }
 
-impl<'a, T> Default for Bus<'a, T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<'a, T> Node for Bus<'a, T>
+impl<'a, T, A> Node for Bus<'a, T, A>
 where
+    A: Allocator,
     T: Frame,
 {
     type Frame = T;

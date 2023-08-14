@@ -1,7 +1,14 @@
-use std::mem;
+use std::{
+    alloc::{
+        Allocator,
+        Global,
+    },
+    mem,
+};
 
 use crate::{
     alloc_buffer,
+    alloc_buffer_in,
     bus::Bus,
     frame::Frame,
     node::Node,
@@ -48,14 +55,20 @@ impl<T: Frame> Node for Single<T> {
 }
 
 #[derive(Debug)]
-pub struct Del<T> {
-    buffer: Box<[T]>,
+pub struct Del<T, A = Global>
+where
+    A: Allocator,
+{
+    buffer: Box<[T], A>,
     index:  usize,
 }
 
-impl<T> Del<T> {
+impl<T, A> Del<T, A>
+where
+    A: Allocator,
+{
     #[must_use]
-    pub fn new(buffer: Box<[T]>) -> Self {
+    pub fn new(buffer: Box<[T], A>) -> Self {
         Self {
             buffer,
             index: 0,
@@ -72,13 +85,16 @@ impl<T> Del<T> {
     }
 
     #[must_use]
-    pub fn into_buffer(self) -> Box<[T]> {
+    pub fn into_buffer(self) -> Box<[T], A> {
         self.buffer
     }
 }
 
-impl<T> From<Box<[T]>> for Del<T> {
-    fn from(value: Box<[T]>) -> Self {
+impl<T, A> From<Box<[T], A>> for Del<T, A>
+where
+    A: Allocator,
+{
+    fn from(value: Box<[T], A>) -> Self {
         Self::new(value)
     }
 }
@@ -91,6 +107,20 @@ where
     #[must_use]
     pub fn alloc_new(size: usize) -> Self {
         Self::new(alloc_buffer(size))
+    }
+}
+
+impl<T, A> Del<T, A>
+where
+    A: Allocator,
+    T: Default,
+{
+    #[must_use]
+    pub fn alloc_new_in(
+        size: usize,
+        alloc: A,
+    ) -> Self {
+        Self::new(alloc_buffer_in(size, alloc))
     }
 }
 
