@@ -64,7 +64,7 @@ pub mod traits {
 
 pub mod dsp {
     pub use crate::{
-        delay::{
+        fbk::{
             Del,
             Fbk,
             SingleSample,
