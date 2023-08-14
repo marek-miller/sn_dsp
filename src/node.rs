@@ -2,6 +2,10 @@
 #![allow(clippy::type_complexity)]
 
 use std::{
+    alloc::{
+        Allocator,
+        Global,
+    },
     fmt::Debug,
     marker::PhantomData,
 };
@@ -65,8 +69,11 @@ where
     }
 }
 
-pub struct HeapNode<'a, T> {
-    f: Box<dyn FnMut(&mut [T]) + 'a>,
+pub struct HeapNode<'a, T, A = Global>
+where
+    A: Allocator,
+{
+    f: Box<dyn FnMut(&mut [T]) + 'a, A>,
 }
 
 impl<'a, T> Debug for HeapNode<'a, T> {
@@ -80,48 +87,46 @@ impl<'a, T> Debug for HeapNode<'a, T> {
     }
 }
 
-impl<'a, T> HeapNode<'a, T>
+impl<'a, T, A> HeapNode<'a, T, A>
 where
+    A: Allocator,
     T: Frame,
 {
     #[must_use]
-    pub fn new(f: Box<dyn FnMut(&mut [T]) + 'a>) -> Self {
+    pub fn new(f: Box<dyn FnMut(&mut [T]) + 'a, A>) -> Self {
         Self {
             f,
         }
     }
 
     #[must_use]
-    pub fn as_box(&self) -> &Box<dyn FnMut(&mut [T]) + 'a> {
+    pub fn as_box(&self) -> &Box<dyn FnMut(&mut [T]) + 'a, A> {
         &self.f
     }
 
-    pub fn as_box_mut(&mut self) -> &mut Box<dyn FnMut(&mut [T]) + 'a> {
+    pub fn as_box_mut(&mut self) -> &mut Box<dyn FnMut(&mut [T]) + 'a, A> {
         &mut self.f
     }
 
     #[must_use]
-    pub fn into_box(self) -> Box<dyn FnMut(&mut [T]) + 'a> {
+    pub fn into_box(self) -> Box<dyn FnMut(&mut [T]) + 'a, A> {
         self.f
     }
 }
 
-impl<'a, T> From<Box<dyn FnMut(&mut [T]) + 'a>> for HeapNode<'a, T>
+impl<'a, T, A> From<Box<dyn FnMut(&mut [T]) + 'a, A>> for HeapNode<'a, T, A>
 where
+    A: Allocator,
     T: Frame,
 {
-    fn from(value: Box<dyn FnMut(&mut [T]) + 'a>) -> Self {
+    fn from(value: Box<dyn FnMut(&mut [T]) + 'a, A>) -> Self {
         Self::new(value)
     }
 }
 
-/// Move closure `f` to the heap
-pub fn heapnode<'a, T: Frame>(f: impl FnMut(&mut [T]) + 'a) -> HeapNode<'a, T> {
-    HeapNode::new(Box::new(f))
-}
-
-impl<'a, T> Node for HeapNode<'a, T>
+impl<'a, T, A> Node for HeapNode<'a, T, A>
 where
+    A: Allocator,
     T: Frame,
 {
     type Frame = T;
@@ -132,4 +137,19 @@ where
     ) {
         (self.f)(frames);
     }
+}
+
+/// Move closure `f` to the heap
+pub fn heapnode<'a, T: Frame>(f: impl FnMut(&mut [T]) + 'a) -> HeapNode<'a, T> {
+    HeapNode::new(Box::new(f))
+}
+
+pub fn heapnode_in<'a, T: Frame, A>(
+    f: impl FnMut(&mut [T]) + 'a,
+    alloc: A,
+) -> HeapNode<'a, T, A>
+where
+    A: Allocator,
+{
+    HeapNode::new(Box::new_in(f, alloc))
 }
