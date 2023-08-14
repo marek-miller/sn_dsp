@@ -13,6 +13,7 @@ pub use crate::{
     frame::{
         splat,
         Arf,
+        StSimd,
     },
     node::{
         heapnode,
@@ -37,8 +38,11 @@ pub mod types {
     pub use crate::{
         frame::{
             Mo,
+            MoSimd,
             Qd,
+            QdSimd,
             St,
+            StSimd,
         },
         num::Fp,
     };

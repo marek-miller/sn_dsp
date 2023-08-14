@@ -10,6 +10,7 @@
 #![deny(missing_debug_implementations)]
 #![feature(allocator_api)]
 #![feature(new_uninit)]
+#![feature(portable_simd)]
 
 use std::alloc::Allocator;
 
