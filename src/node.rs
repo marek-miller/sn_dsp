@@ -143,13 +143,15 @@ impl<'a, T> Bus<'a, T> {
         self.nodes.push(Box::new(f));
     }
 
-    pub fn add_node(
+    pub fn add_node<N>(
         &mut self,
-        node: HeapNode<'a, T>,
+        node: N,
     ) where
         T: Frame,
+        N: Node<Frame = T> + 'a,
     {
-        self.nodes.push(node.as_box())
+        let mut node = node;
+        self.nodes.push(Box::new(move |x| node.proc(x)));
     }
 }
 

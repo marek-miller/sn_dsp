@@ -66,6 +66,7 @@ pub mod dsp {
     pub use crate::{
         delay::{
             Del,
+            Fbk,
             SingleSample,
         },
         filter::{
