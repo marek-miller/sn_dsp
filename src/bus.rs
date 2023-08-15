@@ -95,11 +95,13 @@ where
         &mut self,
         node: N,
         alloc: A,
-    ) where
+    ) -> &mut Self
+    where
         T: Frame,
         N: Node<Frame = T> + 'a,
     {
         self.push(Box::new_in(node, alloc));
+        self
     }
 
     /// # Panics
@@ -110,11 +112,13 @@ where
         index: usize,
         node: N,
         alloc: A,
-    ) where
+    ) -> &mut Self
+    where
         T: Frame,
         N: Node<Frame = T> + 'a,
     {
         self.insert(index, Box::new_in(node, alloc));
+        self
     }
 
     pub fn clear(&mut self) {
@@ -245,11 +249,13 @@ impl<'a, T> Bus<'a, T> {
     pub fn node_push<N>(
         &mut self,
         node: N,
-    ) where
+    ) -> &mut Self
+    where
         T: Frame,
         N: Node<Frame = T> + 'a,
     {
         self.push(Box::new(node));
+        self
     }
 
     /// Allocates memory on the heap
@@ -261,11 +267,13 @@ impl<'a, T> Bus<'a, T> {
         &mut self,
         index: usize,
         node: N,
-    ) where
+    ) -> &mut Self
+    where
         T: Frame,
         N: Node<Frame = T> + 'a,
     {
         self.insert(index, Box::new(node));
+        self
     }
 }
 

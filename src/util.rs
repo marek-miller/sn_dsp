@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Gain<T>
+pub struct Util<T>
 where
     T: Frame,
 {
@@ -19,7 +19,7 @@ where
     _marker:  PhantomData<T>,
 }
 
-impl<T> Gain<T>
+impl<T> Util<T>
 where
     T: Frame,
 {
@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<T> Default for Gain<T>
+impl<T> Default for Util<T>
 where
     T: Frame,
 {
@@ -41,7 +41,7 @@ where
     }
 }
 
-impl<T> Node for Gain<T>
+impl<T> Node for Util<T>
 where
     T: Frame,
 {

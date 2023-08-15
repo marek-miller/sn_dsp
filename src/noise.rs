@@ -33,6 +33,7 @@ impl<T, R> Noise<T, R>
 where
     R: SeedableRng,
 {
+    #[must_use]
     pub fn with_seed(seed: u64) -> Self {
         Self {
             rng:     R::seed_from_u64(seed),
@@ -64,7 +65,7 @@ where
         // TODO: Make it more efficient with Fill trait
         for frm in frames {
             for sample in frm.as_mut_slice() {
-                *sample = self.rng.gen_range(-1. ..1.).to_float()
+                *sample = self.rng.gen_range(-1. ..1.).to_float();
             }
         }
     }

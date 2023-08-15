@@ -36,6 +36,16 @@ where
     LaneCount<N>: SupportedLaneCount,
     T: SimdElement;
 
+impl<T, const N: usize> Sdf<T, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+{
+    pub fn to_simd(self) -> Simd<T, N> {
+        self.0
+    }
+}
+
 impl<T, const N: usize> From<[T; N]> for Sdf<T, N>
 where
     LaneCount<N>: SupportedLaneCount,
@@ -276,5 +286,17 @@ where
 
     fn splat(value: Self::Sample) -> Self {
         Self(Simd::splat(value))
+    }
+}
+
+impl<T> Sdf<T, 2>
+where
+    T: SimdElement + Float,
+{
+    pub fn flip(&mut self) {
+        let lf = self[0];
+        let rf = self[1];
+        self[0] = rf;
+        self[1] = lf;
     }
 }

@@ -43,6 +43,7 @@ static ALLOCATOR: SimpleAllocator = SimpleAllocator {
 
 unsafe impl Sync for SimpleAllocator {}
 
+#[allow(clippy::blocks_in_if_conditions)]
 unsafe impl GlobalAlloc for SimpleAllocator {
     unsafe fn alloc(
         &self,

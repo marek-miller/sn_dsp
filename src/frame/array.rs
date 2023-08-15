@@ -17,7 +17,6 @@ use std::{
 use super::Frame;
 use crate::num::{
     Float,
-    Fp,
     Zero,
 };
 
@@ -214,19 +213,10 @@ impl<T> Arf<T, 2>
 where
     T: Float,
 {
-    #[must_use]
-    pub fn flip(self) -> Self {
-        [self.0[1], self.0[0]].into()
-    }
-
-    /// `pos` is assumed to be within `[-1., 1.]`
-    #[must_use]
-    pub fn pan(
-        self,
-        pos: Fp,
-    ) -> Self {
-        let pan_l = ((1. - pos) * 0.5).sqrt().to_float();
-        let pan_r = ((1. + pos) * 0.5).sqrt().to_float();
-        [self.0[0] * pan_l, self.0[1] * pan_r].into()
+    pub fn flip(&mut self) {
+        let lf = self[0];
+        let rf = self[1];
+        self[0] = rf;
+        self[1] = lf;
     }
 }
