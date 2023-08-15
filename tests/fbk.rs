@@ -1,6 +1,6 @@
 use sn_dsp::{
     bus::Bus,
-    fbk::{
+    feedback::{
         Del,
         Fbk,
     },

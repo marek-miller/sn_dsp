@@ -13,20 +13,20 @@
 mod buffer;
 pub use buffer::Buf;
 
-mod ctl;
-pub use ctl::{
+mod control;
+pub use control::{
     Control,
     Reset,
 };
 
 pub mod bus;
 pub mod envelope;
-pub mod fbk;
+pub mod feedback;
 pub mod filter;
 pub mod frame;
 pub mod math;
 pub mod node;
 pub mod noise;
 pub mod num;
-pub mod osc;
+pub mod oscillator;
 pub mod util;

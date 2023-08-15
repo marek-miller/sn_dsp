@@ -1,6 +1,6 @@
 use sn_dsp::{
     bus::Bus,
-    fbk::Del,
+    feedback::Del,
     frame::{
         splat,
         St,
