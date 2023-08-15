@@ -15,6 +15,7 @@
 use std::alloc::Allocator;
 
 pub mod bus;
+pub mod envelope;
 pub mod fbk;
 pub mod filter;
 pub mod frame;

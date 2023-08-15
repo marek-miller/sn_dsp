@@ -14,3 +14,9 @@ default = ["f64"]
 f64 = []
 
 [dependencies]
+
+
+[profile.release-lto]
+inherits = "release"
+opt-level = 3
+lto = "fat"
