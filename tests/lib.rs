@@ -1,5 +1,4 @@
 use sn_dsp::{
-    alloc_buffer,
     bus::Bus,
     fbk::Del,
     frame::{
@@ -16,6 +15,7 @@ use sn_dsp::{
         Real,
         Zero,
     },
+    Buf,
 };
 
 // Frame type
@@ -28,7 +28,7 @@ fn check_dyn_chain_91() {
 
     let mut gain = 32.;
 
-    let buf = alloc_buffer(2);
+    let buf = Buf::alloc_new(2);
     let del1 = Del::new(buf);
 
     let mut chain = Bus::new();

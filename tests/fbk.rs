@@ -1,5 +1,4 @@
 use sn_dsp::{
-    alloc_buffer,
     bus::Bus,
     fbk::{
         Del,
@@ -11,6 +10,7 @@ use sn_dsp::{
     },
     node::Node,
     num::zero,
+    Buf,
 };
 
 #[test]
@@ -29,7 +29,7 @@ fn check_fbk_neutral_01() {
 
 #[test]
 fn check_fbk_del_01() {
-    let buf = alloc_buffer::<Mo>(2);
+    let buf = Buf::<Mo>::alloc_new(2);
     let del = Del::new(buf);
 
     let mut fbk = Fbk::new();
@@ -48,7 +48,7 @@ fn check_fbk_del_01() {
 
 #[test]
 fn check_fbk_del_02() {
-    let buf = alloc_buffer::<Mo>(2);
+    let buf = Buf::<Mo>::alloc_new(2);
     let del = Del::new(buf);
 
     let mut fbk = Fbk::new();

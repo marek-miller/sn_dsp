@@ -11,10 +11,7 @@
 // pub mod prelude;
 
 mod buffer;
-pub use buffer::{
-    alloc_buffer,
-    alloc_buffer_in,
-};
+pub use buffer::Buf;
 
 mod ctl;
 pub use ctl::{

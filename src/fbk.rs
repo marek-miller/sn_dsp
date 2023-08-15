@@ -7,8 +7,6 @@ use std::{
 };
 
 use crate::{
-    alloc_buffer,
-    alloc_buffer_in,
     bus::Bus,
     frame::Frame,
     node::Node,
@@ -17,6 +15,7 @@ use crate::{
         Float,
         Fp,
     },
+    Buf,
 };
 
 #[derive(Debug)]
@@ -59,7 +58,7 @@ pub struct Del<T, A = Global>
 where
     A: Allocator,
 {
-    buffer: Box<[T], A>,
+    buffer: Buf<T, A>,
     index:  usize,
 }
 
@@ -68,7 +67,7 @@ where
     A: Allocator,
 {
     #[must_use]
-    pub fn new(buffer: Box<[T], A>) -> Self {
+    pub fn new(buffer: Buf<T, A>) -> Self {
         Self {
             buffer,
             index: 0,
@@ -76,25 +75,25 @@ where
     }
 
     #[must_use]
-    pub fn buffer(&self) -> &[T] {
-        &self.buffer
+    pub fn as_slice(&self) -> &[T] {
+        self.buffer.as_slice()
     }
 
-    pub fn buffer_mut(&mut self) -> &mut [T] {
-        &mut self.buffer
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self.buffer.as_mut_slice()
     }
 
     #[must_use]
-    pub fn into_buffer(self) -> Box<[T], A> {
+    pub fn into_buffer(self) -> Buf<T, A> {
         self.buffer
     }
 }
 
-impl<T, A> From<Box<[T], A>> for Del<T, A>
+impl<T, A> From<Buf<T, A>> for Del<T, A>
 where
     A: Allocator,
 {
-    fn from(value: Box<[T], A>) -> Self {
+    fn from(value: Buf<T, A>) -> Self {
         Self::new(value)
     }
 }
@@ -106,7 +105,7 @@ where
     // Allocate memory for a new buffer on the heap
     #[must_use]
     pub fn alloc_new(size: usize) -> Self {
-        Self::new(alloc_buffer(size))
+        Self::new(Buf::alloc_new(size))
     }
 }
 
@@ -120,7 +119,7 @@ where
         size: usize,
         alloc: A,
     ) -> Self {
-        Self::new(alloc_buffer_in(size, alloc))
+        Self::new(Buf::alloc_new_in(size, alloc))
     }
 }
 
