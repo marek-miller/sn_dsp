@@ -146,7 +146,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// # use sn_dsp::terp::cub;
+/// # use sn_dsp::math::cub;
 /// let (a_prev, a, b, b_next) = (0., 1., 2., 3.);
 ///
 /// assert_eq!(cub(a_prev, a, b, b_next, 0.00), 1.00);

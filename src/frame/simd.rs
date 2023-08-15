@@ -4,6 +4,8 @@ use std::{
     ops::{
         Add,
         AddAssign,
+        Index,
+        IndexMut,
         Mul,
         MulAssign,
         Neg,
@@ -86,6 +88,35 @@ where
     }
 }
 
+impl<T, const N: usize> IndexMut<usize> for Sdf<T, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+{
+    fn index_mut(
+        &mut self,
+        index: usize,
+    ) -> &mut Self::Output {
+        &mut self.0[index]
+    }
+}
+
+impl<T, const N: usize> Add for Sdf<T, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+    T: SimdElement,
+    Simd<T, N>: Add<Output = Simd<T, N>>,
+{
+    type Output = Self;
+
+    fn add(
+        self,
+        rhs: Self,
+    ) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+
 impl<T, const N: usize> Zero for Sdf<T, N>
 where
     LaneCount<N>: SupportedLaneCount,
@@ -106,19 +137,18 @@ where
     }
 }
 
-impl<T, const N: usize> Add for Sdf<T, N>
+impl<T, const N: usize> Index<usize> for Sdf<T, N>
 where
     LaneCount<N>: SupportedLaneCount,
     T: SimdElement,
-    Simd<T, N>: Add<Output = Simd<T, N>>,
 {
-    type Output = Self;
+    type Output = T;
 
-    fn add(
-        self,
-        rhs: Self,
-    ) -> Self::Output {
-        Self(self.0 + rhs.0)
+    fn index(
+        &self,
+        index: usize,
+    ) -> &Self::Output {
+        &self.0[index]
     }
 }
 

@@ -4,6 +4,8 @@ use std::{
     ops::{
         Add,
         AddAssign,
+        Index,
+        IndexMut,
         Mul,
         MulAssign,
         Neg,
@@ -32,6 +34,26 @@ impl<T, const N: usize> From<[T; N]> for Arf<T, N> {
 impl<T, const N: usize> From<Arf<T, N>> for [T; N] {
     fn from(value: Arf<T, N>) -> Self {
         value.0
+    }
+}
+
+impl<T, const N: usize> Index<usize> for Arf<T, N> {
+    type Output = T;
+
+    fn index(
+        &self,
+        index: usize,
+    ) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl<T, const N: usize> IndexMut<usize> for Arf<T, N> {
+    fn index_mut(
+        &mut self,
+        index: usize,
+    ) -> &mut Self::Output {
+        &mut self.0[index]
     }
 }
 
