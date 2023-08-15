@@ -26,6 +26,7 @@ pub mod filter;
 pub mod frame;
 pub mod math;
 pub mod node;
+pub mod noise;
 pub mod num;
 pub mod osc;
 pub mod util;

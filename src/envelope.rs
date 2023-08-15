@@ -10,14 +10,6 @@ use crate::{
     Reset,
 };
 
-mod geom;
-pub use geom::{
-    Curve,
-    Line,
-    Point,
-    Segment,
-};
-
 pub trait Envelope {
     type Sample;
 
