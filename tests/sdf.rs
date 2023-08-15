@@ -1,4 +1,22 @@
-use sn_dsp::prelude::*;
+use sn_dsp::{
+    alloc_buffer,
+    bus::Bus,
+    fbk::Del,
+    frame::{
+        splat,
+        Sdf,
+    },
+    node::{
+        heapnode,
+        Node,
+    },
+    num::{
+        Float,
+        Fp,
+        Real,
+        Zero,
+    },
+};
 
 // Frame type
 type Typ = Sdf<Fp, 2>;
@@ -11,7 +29,7 @@ fn check_dyn_chain_simd_91() {
     let mut gain = 32.;
 
     let buf = alloc_buffer(2);
-    let del1 = dsp::Del::new(buf);
+    let del1 = Del::new(buf);
 
     let mut chain = Bus::new();
     chain.node_push(del1);

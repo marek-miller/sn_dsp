@@ -28,7 +28,7 @@ pub use crate::{
         zero,
         Bit,
     },
-    terp::{
+    math::{
         cub,
         lin,
         noi,
@@ -57,7 +57,7 @@ pub mod traits {
             Real,
             Zero,
         },
-        terp::{
+        math::{
             Cub,
             Lin,
             Noi,

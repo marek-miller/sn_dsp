@@ -1,8 +1,21 @@
-use sn_dsp::prelude::*;
+use sn_dsp::{
+    alloc_buffer,
+    bus::Bus,
+    fbk::{
+        Del,
+        Fbk,
+    },
+    frame::{
+        splat,
+        Mo,
+    },
+    node::Node,
+    num::zero,
+};
 
 #[test]
 fn check_fbk_neutral_01() {
-    let mut fbk = dsp::Fbk::new();
+    let mut fbk = Fbk::new();
 
     let sil = zero::<Mo>();
     let imp = splat(1.);
@@ -17,9 +30,9 @@ fn check_fbk_neutral_01() {
 #[test]
 fn check_fbk_del_01() {
     let buf = alloc_buffer::<Mo>(2);
-    let del = dsp::Del::new(buf);
+    let del = Del::new(buf);
 
-    let mut fbk = dsp::Fbk::new();
+    let mut fbk = Fbk::new();
     *fbk.feedback_mut() = 0.5;
     fbk.bus_mut().node_push(del);
 
@@ -36,9 +49,9 @@ fn check_fbk_del_01() {
 #[test]
 fn check_fbk_del_02() {
     let buf = alloc_buffer::<Mo>(2);
-    let del = dsp::Del::new(buf);
+    let del = Del::new(buf);
 
-    let mut fbk = dsp::Fbk::new();
+    let mut fbk = Fbk::new();
     *fbk.feedback_mut() = 0.5;
 
     fbk.bus_mut().node_push(del);
