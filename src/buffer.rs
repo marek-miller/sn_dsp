@@ -130,7 +130,7 @@ where
 
     pub fn clear(&mut self) {
         for x in self {
-            *x = T::default()
+            *x = T::default();
         }
     }
 }
@@ -142,7 +142,7 @@ where
 {
     pub fn zero(&mut self) {
         for x in self {
-            *x = zero()
+            *x = zero();
         }
     }
 }

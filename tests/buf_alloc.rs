@@ -1,5 +1,5 @@
-//! SimpleAllocator code copied from the Standard Library:
-//! [GlobalAlloc].
+//! `SimpleAllocator` code copied from the Standard Library:
+//! [`GlobalAlloc`].
 //!
 //! [GlobalAlloc]: [https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html]
 
@@ -117,6 +117,6 @@ fn buf_alloc_01() {
     let mut c = 0.;
     buf.iter_mut().for_each(|x| {
         x[0] = c;
-        c += 1.
+        c += 1.;
     });
 }
