@@ -26,6 +26,7 @@ pub use crate::{
         tau,
         two,
         zero,
+        Bit,
     },
     terp::{
         cub,
@@ -47,6 +48,7 @@ pub mod types {
 
 pub mod traits {
     pub use crate::{
+        envelope::Envelope,
         frame::Frame,
         node::Node,
         num::{
@@ -60,11 +62,19 @@ pub mod traits {
             Lin,
             Noi,
         },
+        Control,
+        Reset,
     };
 }
 
 pub mod dsp {
     pub use crate::{
+        envelope::{
+            Gate,
+            Latch,
+            Ramp,
+            Trig,
+        },
         fbk::{
             Del,
             Fbk,

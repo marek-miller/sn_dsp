@@ -8,6 +8,8 @@ use std::ops::{
     SubAssign,
 };
 
+use crate::Reset;
+
 #[cfg(feature = "f64")]
 pub type Fp = f64;
 #[cfg(not(feature = "f64"))]
@@ -23,17 +25,38 @@ pub fn zero<T: Zero>() -> T {
     T::zero()
 }
 
-impl Zero for f32 {
-    fn zero() -> Self {
-        0.
-    }
+macro_rules! impl_zero {
+    ($($Typ:ident)*) => {
+        $(
+            impl Zero for $Typ {
+                fn zero() -> Self {
+                    0
+                }
+            }
+
+        )*
+
+    };
 }
 
-impl Zero for f64 {
-    fn zero() -> Self {
-        0.
-    }
+impl_zero!(u8 u16 u32 u64 usize);
+impl_zero!(i8 i16 i32 i64 isize);
+
+macro_rules! impl_zero_float {
+    ($($Typ:ident)*) => {
+        $(
+            impl Zero for $Typ {
+                fn zero() -> Self {
+                    0.
+                }
+            }
+
+        )*
+
+    };
 }
+
+impl_zero_float!(f32 f64);
 
 pub trait One {
     fn one() -> Self;
@@ -45,15 +68,126 @@ pub fn one<T: One>() -> T {
     T::one()
 }
 
-impl One for f32 {
-    fn one() -> Self {
-        1.
+macro_rules! impl_one {
+    ($($Typ:ident)*) => {
+        $(
+            impl One for $Typ {
+                fn one() -> Self {
+                    1
+                }
+            }
+
+        )*
+
+    };
+}
+
+impl_one!(u8 u16 u32 u64 usize);
+impl_one!(i8 i16 i32 i64 isize);
+
+macro_rules! impl_one_float {
+    ($($Typ:ident)*) => {
+        $(
+            impl One for $Typ {
+                fn one() -> Self {
+                    1.
+                }
+            }
+
+        )*
+
+    };
+}
+impl_one_float!(f32 f64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub enum Bit {
+    #[default]
+    Zero,
+    One,
+}
+
+impl Bit {
+    #[must_use]
+    pub fn is_one(&self) -> bool {
+        match self {
+            Bit::Zero => false,
+            Bit::One => true,
+        }
+    }
+
+    #[must_use]
+    pub fn flip(self) -> Self {
+        use Bit::{
+            One,
+            Zero,
+        };
+        match self {
+            Zero => One,
+            One => Zero,
+        }
     }
 }
 
-impl One for f64 {
+impl Zero for Bit {
+    fn zero() -> Self {
+        Bit::Zero
+    }
+}
+
+impl One for Bit {
     fn one() -> Self {
-        1.
+        Bit::One
+    }
+}
+
+impl From<Bit> for bool {
+    fn from(value: Bit) -> Self {
+        value.is_one()
+    }
+}
+
+macro_rules! impl_from_bit {
+    ($($Typ:ident)*) => {
+        $(
+            impl From<Bit> for $Typ {
+                fn from(value: Bit) -> $Typ {
+                    match value {
+                        Bit::Zero => 0,
+                        Bit::One => 1,
+                    }
+                }
+            }
+
+        )*
+
+    };
+}
+
+impl_from_bit!(u8 u16 u32 u64 usize);
+impl_from_bit!(i8 i16 i32 i64 isize);
+
+macro_rules! impl_from_bit_float {
+    ($($Typ:ident)*) => {
+        $(
+            impl From<Bit> for $Typ {
+                fn from(value: Bit) -> $Typ {
+                    match value {
+                        Bit::Zero => 0.,
+                        Bit::One => 1.,
+                    }
+                }
+            }
+
+        )*
+
+    };
+}
+impl_from_bit_float!(f32 f64);
+
+impl Reset for Bit {
+    fn reset(&mut self) {
+        *self = zero();
     }
 }
 
