@@ -73,7 +73,7 @@ pub struct HeapNode<'a, T, A = Global>
 where
     A: Allocator,
 {
-    f: Box<dyn FnMut(&mut [T]) + 'a, A>,
+    f: Box<dyn FnMut(&mut [T]) + Sync + Send + 'a, A>,
 }
 
 impl<'a, T> Debug for HeapNode<'a, T> {
@@ -93,33 +93,36 @@ where
     T: Frame,
 {
     #[must_use]
-    pub fn new(f: Box<dyn FnMut(&mut [T]) + 'a, A>) -> Self {
+    pub fn new(f: Box<dyn FnMut(&mut [T]) + Sync + Send + 'a, A>) -> Self {
         Self {
             f,
         }
     }
 
     #[must_use]
-    pub fn as_box(&self) -> &Box<dyn FnMut(&mut [T]) + 'a, A> {
+    pub fn as_box(&self) -> &Box<dyn FnMut(&mut [T]) + Sync + Send + 'a, A> {
         &self.f
     }
 
-    pub fn as_box_mut(&mut self) -> &mut Box<dyn FnMut(&mut [T]) + 'a, A> {
+    pub fn as_box_mut(
+        &mut self
+    ) -> &mut Box<dyn FnMut(&mut [T]) + Sync + Send + 'a, A> {
         &mut self.f
     }
 
     #[must_use]
-    pub fn into_box(self) -> Box<dyn FnMut(&mut [T]) + 'a, A> {
+    pub fn into_box(self) -> Box<dyn FnMut(&mut [T]) + Sync + Send + 'a, A> {
         self.f
     }
 }
 
-impl<'a, T, A> From<Box<dyn FnMut(&mut [T]) + 'a, A>> for HeapNode<'a, T, A>
+impl<'a, T, A> From<Box<dyn FnMut(&mut [T]) + Sync + Send + 'a, A>>
+    for HeapNode<'a, T, A>
 where
     A: Allocator,
     T: Frame,
 {
-    fn from(value: Box<dyn FnMut(&mut [T]) + 'a, A>) -> Self {
+    fn from(value: Box<dyn FnMut(&mut [T]) + Sync + Send + 'a, A>) -> Self {
         Self::new(value)
     }
 }
@@ -140,12 +143,14 @@ where
 }
 
 /// Move closure `f` to the heap
-pub fn heapnode<'a, T: Frame>(f: impl FnMut(&mut [T]) + 'a) -> HeapNode<'a, T> {
+pub fn heapnode<'a, T: Frame>(
+    f: impl FnMut(&mut [T]) + Sync + Send + 'a
+) -> HeapNode<'a, T> {
     HeapNode::new(Box::new(f))
 }
 
 pub fn heapnode_in<'a, T: Frame, A>(
-    f: impl FnMut(&mut [T]) + 'a,
+    f: impl FnMut(&mut [T]) + Sync + Send + 'a,
     alloc: A,
 ) -> HeapNode<'a, T, A>
 where

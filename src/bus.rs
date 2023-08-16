@@ -25,7 +25,7 @@ pub struct Bus<'a, T, A = Global>
 where
     A: Allocator,
 {
-    nodes: Vec<Box<dyn Node<Frame = T> + 'a, A>, A>,
+    nodes: Vec<Box<dyn Node<Frame = T> + Sync + Send + 'a, A>, A>,
 }
 
 impl<'a, T, A> Bus<'a, T, A>
@@ -50,12 +50,14 @@ where
 
     pub fn push(
         &mut self,
-        node: Box<dyn Node<Frame = T> + 'a, A>,
+        node: Box<dyn Node<Frame = T> + Sync + Send + 'a, A>,
     ) {
         self.nodes.push(node);
     }
 
-    pub fn pop(&mut self) -> Option<Box<dyn Node<Frame = T> + 'a, A>> {
+    pub fn pop(
+        &mut self
+    ) -> Option<Box<dyn Node<Frame = T> + Sync + Send + 'a, A>> {
         self.nodes.pop()
     }
 
@@ -65,7 +67,7 @@ where
     pub fn insert(
         &mut self,
         index: usize,
-        node: Box<dyn Node<Frame = T> + 'a, A>,
+        node: Box<dyn Node<Frame = T> + Sync + Send + 'a, A>,
     ) {
         self.nodes.insert(index, node);
     }
@@ -76,7 +78,7 @@ where
     pub fn remove(
         &mut self,
         index: usize,
-    ) -> Box<dyn Node<Frame = T> + 'a, A> {
+    ) -> Box<dyn Node<Frame = T> + Sync + Send + 'a, A> {
         self.nodes.remove(index)
     }
 
@@ -86,8 +88,8 @@ where
     pub fn replace(
         &mut self,
         index: usize,
-        node: Box<dyn Node<Frame = T> + 'a, A>,
-    ) -> Box<dyn Node<Frame = T> + 'a, A> {
+        node: Box<dyn Node<Frame = T> + Sync + Send + 'a, A>,
+    ) -> Box<dyn Node<Frame = T> + Sync + Send + 'a, A> {
         mem::replace(&mut self.nodes[index], node)
     }
 
@@ -98,7 +100,7 @@ where
     ) -> &mut Self
     where
         T: Frame,
-        N: Node<Frame = T> + 'a,
+        N: Node<Frame = T> + Sync + Send + 'a,
     {
         self.push(Box::new_in(node, alloc));
         self
@@ -115,7 +117,7 @@ where
     ) -> &mut Self
     where
         T: Frame,
-        N: Node<Frame = T> + 'a,
+        N: Node<Frame = T> + Sync + Send + 'a,
     {
         self.insert(index, Box::new_in(node, alloc));
         self
@@ -125,21 +127,27 @@ where
         self.nodes.clear();
     }
 
-    pub fn as_slice(&self) -> &[Box<dyn Node<Frame = T> + 'a, A>] {
+    pub fn as_slice(
+        &self
+    ) -> &[Box<dyn Node<Frame = T> + Sync + Send + 'a, A>] {
         &self.nodes
     }
 
-    pub fn as_mut_slice(&mut self) -> &mut [Box<dyn Node<Frame = T> + 'a, A>] {
+    pub fn as_mut_slice(
+        &mut self
+    ) -> &mut [Box<dyn Node<Frame = T> + Sync + Send + 'a, A>] {
         &mut self.nodes
     }
 
-    pub fn iter(&self) -> Iter<'_, Box<dyn Node<Frame = T> + 'a, A>> {
+    pub fn iter(
+        &self
+    ) -> Iter<'_, Box<dyn Node<Frame = T> + Sync + Send + 'a, A>> {
         self.nodes.iter()
     }
 
     pub fn iter_mut(
         &mut self
-    ) -> IterMut<'_, Box<dyn Node<Frame = T> + 'a, A>> {
+    ) -> IterMut<'_, Box<dyn Node<Frame = T> + Sync + Send + 'a, A>> {
         self.nodes.iter_mut()
     }
 }
@@ -148,10 +156,12 @@ impl<'a, T, A> IntoIterator for Bus<'a, T, A>
 where
     A: Allocator,
 {
-    type IntoIter = IntoIter<Box<dyn Node<Frame = T> + 'a, A>, A>;
-    type Item = Box<dyn Node<Frame = T> + 'a, A>;
+    type IntoIter = IntoIter<Box<dyn Node<Frame = T> + Sync + Send + 'a, A>, A>;
+    type Item = Box<dyn Node<Frame = T> + Sync + Send + 'a, A>;
 
-    fn into_iter(self) -> IntoIter<Box<dyn Node<Frame = T> + 'a, A>, A> {
+    fn into_iter(
+        self
+    ) -> IntoIter<Box<dyn Node<Frame = T> + Sync + Send + 'a, A>, A> {
         self.nodes.into_iter()
     }
 }
@@ -160,8 +170,8 @@ impl<'b, 'a: 'b, T, A> IntoIterator for &'b Bus<'a, T, A>
 where
     A: Allocator,
 {
-    type IntoIter = Iter<'b, Box<dyn Node<Frame = T> + 'a, A>>;
-    type Item = &'b Box<dyn Node<Frame = T> + 'a, A>;
+    type IntoIter = Iter<'b, Box<dyn Node<Frame = T> + Sync + Send + 'a, A>>;
+    type Item = &'b Box<dyn Node<Frame = T> + Sync + Send + 'a, A>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -172,8 +182,8 @@ impl<'b, 'a: 'b, T, A> IntoIterator for &'b mut Bus<'a, T, A>
 where
     A: Allocator,
 {
-    type IntoIter = IterMut<'b, Box<dyn Node<Frame = T> + 'a, A>>;
-    type Item = &'b mut Box<dyn Node<Frame = T> + 'a, A>;
+    type IntoIter = IterMut<'b, Box<dyn Node<Frame = T> + Sync + Send + 'a, A>>;
+    type Item = &'b mut Box<dyn Node<Frame = T> + Sync + Send + 'a, A>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
@@ -184,7 +194,7 @@ impl<'a, T, A> Index<usize> for Bus<'a, T, A>
 where
     A: Allocator,
 {
-    type Output = Box<dyn Node<Frame = T> + 'a, A>;
+    type Output = Box<dyn Node<Frame = T> + Sync + Send + 'a, A>;
 
     fn index(
         &self,
@@ -252,7 +262,7 @@ impl<'a, T> Bus<'a, T> {
     ) -> &mut Self
     where
         T: Frame,
-        N: Node<Frame = T> + 'a,
+        N: Node<Frame = T> + Sync + Send + 'a,
     {
         self.push(Box::new(node));
         self
@@ -270,7 +280,7 @@ impl<'a, T> Bus<'a, T> {
     ) -> &mut Self
     where
         T: Frame,
-        N: Node<Frame = T> + 'a,
+        N: Node<Frame = T> + Sync + Send + 'a,
     {
         self.insert(index, Box::new(node));
         self
