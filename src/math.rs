@@ -5,8 +5,6 @@ use std::ops::{
 
 use crate::num::Float;
 
-pub mod geom;
-
 /// Generic trait for non-interpolating values
 pub trait Noi<T>
 where

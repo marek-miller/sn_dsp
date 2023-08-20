@@ -226,10 +226,11 @@ where
         frames: &mut [Self::Frame],
     ) {
         for frm in frames {
-            let y = &mut [*frm + self.ss_del_frame * self.feedback.to_float()];
-            self.bus.proc(y);
-            self.ss_del_frame = y[0];
-            *frm = y[0];
+            let y0 = self
+                .bus
+                .tick(*frm + self.ss_del_frame * self.feedback.to_float());
+            self.ss_del_frame = y0;
+            *frm = y0;
         }
     }
 }

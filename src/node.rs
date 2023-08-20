@@ -19,6 +19,15 @@ pub trait Node {
         &mut self,
         frames: &mut [Self::Frame],
     );
+
+    fn tick(
+        &mut self,
+        frame: Self::Frame,
+    ) -> Self::Frame {
+        let frames = &mut [frame];
+        self.proc(frames);
+        frames[0]
+    }
 }
 
 #[derive(Debug)]

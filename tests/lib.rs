@@ -3,6 +3,7 @@ use sn_dsp::{
     feedback::Del,
     frame::{
         splat,
+        Mo,
         St,
     },
     node::{
@@ -82,4 +83,19 @@ fn check_dyn_chain_92() {
     assert_eq!(frames, expected);
     drop(chain);
     assert!((gain - 1.).abs() < Fp::EPSILON);
+}
+
+#[test]
+fn check_node_tick_01() {
+    let mut count = 0.;
+    let mut node = StackNode::from(|frames: &mut [Mo]| {
+        for frm in frames {
+            count += 1.;
+            *frm *= count;
+        }
+    });
+
+    assert_eq!(node.tick(splat(1.)), splat(1.));
+    assert_eq!(node.tick(splat(1.)), splat(2.));
+    assert_eq!(node.tick(splat(1.)), splat(3.));
 }

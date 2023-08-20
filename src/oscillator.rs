@@ -50,6 +50,8 @@ where
         &mut self,
         frames: &mut [Self::Frame],
     ) {
+        // TODO: optimize. Compute sine only for the first period.  For the
+        // rest, simply copy frames.
         for frm in frames {
             *frm = Self::Frame::splat(
                 (T::Sample::from_float(self.phase) * tau()).sin(),

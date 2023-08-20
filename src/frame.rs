@@ -18,9 +18,9 @@ use crate::num::{
 };
 
 mod array;
-pub use array::Arf;
-
 mod simd;
+
+pub use array::Arf;
 pub use simd::Sdf;
 
 pub type Mo = Arf<Fp, 1>;
